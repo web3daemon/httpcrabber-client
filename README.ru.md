@@ -7,10 +7,10 @@
 
 [English](README.md) · **Русский** · [Español](README.es.md) · [中文](README.zh.md)
 
-[![Python](https://img.shields.io/badge/Python-3.11%2B-39ff14?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-GPL--3.0-ff2fd0?style=flat-square)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Windows-00e5ff?style=flat-square&logo=windows&logoColor=white)](#требования)
-[![Built with](https://img.shields.io/badge/Built%20with-mitmproxy-ffcc00?style=flat-square)](https://mitmproxy.org/)
+[![Python 3.11+](assets/badge-python.svg)](https://www.python.org/)
+[![Лицензия GPL-3.0](assets/badge-license.svg)](LICENSE)
+[![Платформа Windows](assets/badge-platform.svg)](#требования)
+[![На базе mitmproxy](assets/badge-mitmproxy.svg)](https://mitmproxy.org/)
 
 </div>
 

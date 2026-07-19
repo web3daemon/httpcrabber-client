@@ -1,0 +1,11 @@
+# Нормализуем переводы строк в репозитории (LF), в рабочей копии — по платформе
+* text=auto
+
+*.py    text eol=lf
+*.md    text eol=lf
+*.txt   text eol=lf
+LICENSE text eol=lf
+
+*.jsonl binary
+*.png   binary
+*.gif   binary

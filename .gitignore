@@ -1,0 +1,41 @@
+# ─────────────────────────────────────────────────────────────
+#  КРИТИЧНО: перехваченный трафик содержит куки, токены и ключи.
+#  Никогда не коммить содержимое сессий в публичный репозиторий.
+# ─────────────────────────────────────────────────────────────
+LOGS/
+NETWORKS/
+*.jsonl
+network_log.json
+chrome_profile_proxy/
+
+# Сертификаты и ключи
+*.pem
+*.p12
+*.cer
+*.crt
+*.key
+.mitmproxy/
+
+# Старый прототип, вытесненный httpcrabber.py (остаётся локально)
+network_logger_proxy.py
+
+# Python
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# IDE / ОС
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini

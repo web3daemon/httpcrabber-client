@@ -1,0 +1,4 @@
+mitmproxy>=11.0
+rich>=15.0
+questionary>=2.1
+pproxy>=2.7

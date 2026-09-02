@@ -161,6 +161,13 @@ async def run_session(cfg: SessionConfig) -> NetworkLogger | None:
         # CancelledError — BaseException, поэтому подавляем широко.
         with contextlib.suppress(BaseException):
             await asyncio.shield(master_task)
+        # mitmproxy 11 на shutdown() НЕ закрывает слушающие сокеты — у Proxyserver
+        # нет done-хука, он рассчитывает на выход процесса. На Unix порт остался бы
+        # занят; гасим листенеры явно, тем же путём, что и сам mitmproxy при смене mode.
+        proxyserver = master.addons.get("proxyserver")
+        if proxyserver is not None:
+            with contextlib.suppress(BaseException):
+                await proxyserver.servers.update([])
 
     logger.duration = time.monotonic() - start_ts
     return logger

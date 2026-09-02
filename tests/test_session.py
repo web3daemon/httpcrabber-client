@@ -61,6 +61,16 @@ class _Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
 
+def _port_closes(port: int, timeout: float = 3.0) -> bool:
+    """True, если порт перестаёт принимать соединения в течение timeout."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if not procs.port_open("127.0.0.1", port):
+            return True
+        time.sleep(0.1)
+    return False
+
+
 class _FakeBrowser:
     """«Chrome», который сам закрывается через ttl секунд."""
 
@@ -109,7 +119,7 @@ def test_run_session_end_to_end(origin, monkeypatch):
     assert cfg.log_path.exists()
     manifest = json.loads((cfg.js_dir / "index.json").read_text(encoding="utf-8"))
     assert {e["kind"] for e in manifest} == {"external", "inline"}
-    assert not procs.port_open("127.0.0.1", cfg.proxy_port)   # mitmproxy остановлен
+    assert _port_closes(cfg.proxy_port)   # листенер mitmproxy действительно остановлен
 
 
 @pytest.mark.integration

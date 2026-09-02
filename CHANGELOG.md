@@ -34,6 +34,9 @@ First public release.
 ### Fixed
 - Saved JavaScript no longer gets `\r\n` line endings on Windows (the file on disk now
   matches the SHA-256 in the manifest).
+- The mitmproxy listener is now closed explicitly when a session ends. mitmproxy 11 does
+  not stop its servers on `shutdown()`, so on Linux/macOS the port stayed bound until the
+  process exited.
 - Free-port detection uses `bind` instead of `connect`, which could hang on filtered ports.
 - Hard `Ctrl+C` on Windows no longer leaves Chrome or the pproxy bridge running.
 

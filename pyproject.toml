@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "httpcrabber"
+dynamic = ["version"]
+description = "Network-level HTTP/HTTPS/WebSocket interceptor for reverse-engineering web APIs — invisible to in-page JavaScript protections."
+readme = "README.md"
+license = { text = "GPL-3.0-or-later" }
+requires-python = ">=3.11"
+authors = [{ name = "web3daemon" }]
+keywords = [
+    "mitmproxy", "proxy", "interceptor", "reverse-engineering", "network",
+    "http", "websocket", "security", "api", "socks5", "cli",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet :: Proxy Servers",
+    "Topic :: Security",
+    "Topic :: Software Development :: Debuggers",
+]
+dependencies = [
+    "mitmproxy>=11.0",
+    "rich>=13.0",
+    "questionary>=2.0",
+    "pproxy>=2.7",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.5"]
+
+[project.urls]
+Homepage = "https://github.com/web3daemon/httpcrabber-client"
+Repository = "https://github.com/web3daemon/httpcrabber-client"
+Issues = "https://github.com/web3daemon/httpcrabber-client/issues"
+Changelog = "https://github.com/web3daemon/httpcrabber-client/blob/main/CHANGELOG.md"
+
+[project.scripts]
+httpcrabber = "httpcrabber.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.dynamic]
+version = { attr = "httpcrabber.__version__" }
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+markers = ["integration: spins up real mitmproxy/pproxy on loopback"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+ignore = ["E501"]   # длину строк контролируем форматированием, не линтером
+
+[tool.ruff.lint.isort]
+known-first-party = ["httpcrabber"]

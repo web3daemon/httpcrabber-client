@@ -1,15 +1,18 @@
 <div align="center">
 
-# 🦀 httpcrabber
+<img src="assets/logo.svg" alt="httpcrabber" width="880">
+
+<br>
 
 **Network-level traffic interceptor for reverse-engineering web APIs.**
 Invisible to in-page JavaScript protections — because it never touches the page.
 
 **English** · [Русский](README.ru.md) · [Español](README.es.md) · [中文](README.zh.md)
 
+[![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
 [![Python 3.11+](assets/badge-python.svg)](https://www.python.org/)
+[![Platform Windows · macOS · Linux](assets/badge-platform.svg)](#requirements)
 [![License GPL-3.0](assets/badge-license.svg)](LICENSE)
-[![Platform Windows](assets/badge-platform.svg)](#requirements)
 [![Built with mitmproxy](assets/badge-mitmproxy.svg)](https://mitmproxy.org/)
 
 </div>
@@ -17,30 +20,47 @@ Invisible to in-page JavaScript protections — because it never touches the pag
 ---
 
 ```
-┌────────────────────────────── ● SESSION LIVE ───────────────────────────────┐
-│                                                                             │
-│    Session  TARGET RECON                                                    │
-│   Upstream  socks5://user:****@1.2.3.4:1080                                 │
-│  mitmproxy  127.0.0.1:8080                                                  │
-│        Log  LOGS/target_recon                                               │
-│                                                                             │
-│   ⠸  LIVE INTERCEPT                                                         │
-│   14:22:07  GET    200  https://cdn.target.com/static/js/main.a3f1c8.c…     │
-│   14:22:07  POST   403  https://api.target.com/v2/auth/challenge            │
-│   14:22:08  GET    304  https://target.com/assets/app.css                   │
-│   14:22:08  POST   200  https://api.target.com/v2/graphql                   │
-│   14:22:09  WS     →    wss://realtime.target.com/socket                    │
-│   14:22:09  WS     ←    wss://realtime.target.com/socket                    │
-│   14:22:10  GET    500  https://api.target.com/v2/telemetry/collect         │
-│   14:22:11  ERR    ···  https://blocked.tracker.io/beacon                   │
-│   14:22:12  DELETE 204  https://api.target.com/v2/session                   │
-│                                                                             │
-│   REQ 1478 RESP 1443 WS 12 JS 38 ERR 2        ▂▆█▄▂▁ ▁▄  03:41              │
-│                                                                             │
-│        Close Chrome or press Ctrl+C to finish and save the session.         │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────── 🦀 SESSION LIVE ─────────────────────────────┐
+│                                                                          │
+│    Session  TARGET RECON                                                 │
+│   Upstream  socks5://user:****@1.2.3.4:1080                              │
+│  mitmproxy  127.0.0.1:8080                                               │
+│     Folder  LOGS/target_recon                                            │
+│                                                                          │
+│   ⠸  LIVE INTERCEPT                                                      │
+│   14:22:07  GET    200  https://cdn.target.com/static/js/main.a3f1c8…    │
+│   14:22:07  POST   403  https://api.target.com/v2/auth/challenge         │
+│   14:22:08  GET    304  https://target.com/assets/app.css                │
+│   14:22:08  POST   200  https://api.target.com/v2/graphql                │
+│   14:22:09  WS     →    wss://realtime.target.com/socket                 │
+│   14:22:10  GET    500  https://api.target.com/v2/telemetry/collect      │
+│   14:22:11  ERR    ···  https://blocked.tracker.io/beacon                │
+│   14:22:12  DELETE 204  https://api.target.com/v2/session                │
+│                                                                          │
+│   ● REQ 1478 ● RESP 1443 ● WS 12 ● JS 38 ● ERR 2   ▂▆█▄▂▁▁▄  03:41       │
+│                                                                          │
+│        Close Chrome or press Ctrl+C to finish and save the session.      │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
+
+<details>
+<summary><b>Table of contents</b></summary>
+
+- [Why](#why)
+- [Features](#features)
+- [Requirements](#requirements)
+- [Install](#install)
+- [Quick start](#quick-start)
+- [Command line](#command-line)
+- [Proxy formats](#proxy-formats)
+- [Session output](#session-output)
+- [How it works](#how-it-works)
+- [Security](#-security)
+- [Responsible use](#responsible-use)
+- [Contributing](#contributing)
+- [License](#license)
+
+</details>
 
 ## Why
 
@@ -56,40 +76,53 @@ From the JavaScript's point of view, nothing is there.
 
 | | |
 |---|---|
-| 💚 **Animated hacker CLI** | Matrix rain, glitch banner, typewriter, `[ OK ]` status lines, spinners |
-| 📡 **Live intercept feed** | Requests in real time, colored methods and status codes, traffic sparkline |
-| 🧅 **Any upstream proxy** | `socks5` / `http` / `https`, with or without auth, in every common notation |
-| 🗂 **One folder per session** | Network dump + all scripts together — archive or share a session as a unit |
-| 📜 **Full JavaScript capture** | External bundles and inline `<script>` blocks, complete and deduplicated |
-| 🌐 **Chrome starts itself** | Launched through the proxy with a dedicated profile |
-| 🔐 **Automatic CA setup** | Certificate is checked and installed on first run |
-| ⏹ **Safe shutdown** | Ends on Chrome close *or* `Ctrl+C` — the dump is saved either way |
-| 🌍 **Bilingual UI** | Russian and English, chosen at startup |
+| 💚 **Animated hacker CLI** | Matrix rain, gradient glitch banner, typewriter, real `[ OK ]` status lines, spinners for real waits |
+| 📡 **Live intercept feed** | Requests in real time, colored methods and status codes, counters, traffic sparkline |
+| 📊 **Session analytics** | Top hosts, method and status breakdown, duration and dump size when the session ends |
+| 🧅 **Any upstream proxy** | `socks5` / `socks5h` / `socks4` / `http` / `https`, with or without auth, every common notation |
+| 🗂 **One folder per session** | Network dump + every script together — archive or share a session as a unit |
+| 📜 **Full JavaScript capture** | External bundles and inline `<script>` blocks, complete and deduplicated by SHA-256 |
+| 🌐 **Chrome starts itself** | Launched through the proxy with a dedicated profile — or bring your own browser with `--no-browser` |
+| 🔐 **Automatic CA setup** | Certificate checked and installed on first run, on Windows, macOS and Linux |
+| ⌨️ **Scriptable** | Every prompt has a flag; pass them all and nothing is asked |
+| ⏹ **Safe shutdown** | Ends on Chrome close *or* `Ctrl+C` — the dump is saved and child processes are cleaned up either way |
+| 🌍 **Bilingual UI** | Russian and English, chosen at startup or with `--lang` |
 
 ## Requirements
 
 - **Python 3.11+**
-- **Google Chrome**
-- **Windows** — certificate installation uses `certutil` and Chrome is located via Windows
-  paths. Linux and macOS are not supported yet (contributions welcome).
+- **Google Chrome** or **Chromium** (optional with `--no-browser`)
+
+| OS | Browser discovery | CA certificate install |
+|---|---|---|
+| **Windows** | Program Files, LocalAppData | `certutil -user` into the user Root store — Windows shows one confirmation dialog |
+| **macOS** | `/Applications`, `~/Applications` | `security add-trusted-cert` into the login keychain — macOS asks for your password once |
+| **Linux** | `google-chrome`, `chromium` on `PATH` | NSS database `~/.pki/nssdb` via `certutil` from **libnss3-tools** (`sudo apt install libnss3-tools`) — this is what Chrome reads. Firefox keeps its own store; install from http://mitm.it there |
+
+Set `HTTPCRABBER_BROWSER=/path/to/chrome` to override discovery on any OS.
 
 ## Install
 
 ```bash
+pip install git+https://github.com/web3daemon/httpcrabber-client.git
+httpcrabber --version
+```
+
+Or from a clone, for development:
+
+```bash
 git clone https://github.com/web3daemon/httpcrabber-client.git
 cd httpcrabber-client
-
-python -m venv .venv
-.venv\Scripts\Activate.ps1        # PowerShell
-# source .venv/bin/activate       # bash
-
-pip install -r requirements.txt
+python -m venv .venv && source .venv/bin/activate     # .venv\Scripts\Activate.ps1 on Windows
+pip install -e ".[dev]"
 ```
+
+No install at all? `python run.py` works straight from the clone.
 
 ## Quick start
 
 ```bash
-python httpcrabber.py
+httpcrabber
 ```
 
 The tool asks for three things and handles the rest:
@@ -98,15 +131,49 @@ The tool asks for three things and handles the rest:
 2. **Upstream proxy** — paste it in any format, or press <kbd>Enter</kbd> to go direct
 3. **Session name** — e.g. `TARGET RECON`
 
-Then it installs the CA certificate if needed (confirm the Windows dialog once), starts
-Chrome through the proxy, and streams everything into the session folder. Browse
-normally — every request, response, WebSocket frame and script is captured.
+It shows a session brief, installs the CA certificate if needed, starts Chrome through the
+proxy, and streams everything into the session folder. Browse normally — every request,
+response, WebSocket frame and script is captured. Close Chrome (or press <kbd>Ctrl+C</kbd>)
+to finish; you get an analytics panel and the folder path.
 
-Prefer it without animation:
+```
+┌─────────────────────────────── ✓ SESSION FINISHED ────────────────────────────────┐
+│                                                                                   │
+│    Requests  1478        TOP HOSTS                                                │
+│   Responses  1443        api.target.com       ██████████████ 612                  │
+│   WebSocket  12          cdn.target.com       █████████ 380                       │
+│  JS scripts  38          static.target.com    █████ 214                           │
+│      Errors  2           tracker.io           ██ 96                               │
+│    Duration  03:41                                                                │
+│                          Methods  GET 1201 · POST 260 · OPTIONS 17                │
+│                          Status   2xx 1380 · 3xx 12 · 4xx 51                      │
+│                                                                                   │
+│      Folder  LOGS/target_recon                                                    │
+│        Dump  2.31 MB                                                              │
+└───────────────────────────────────────────────────────────────────────────────────┘
+```
+
+## Command line
+
+Every prompt has a flag. Pass them all and httpcrabber asks nothing — handy for scripts.
 
 ```bash
-python httpcrabber.py --no-anim
+httpcrabber --lang en --session "target recon" --proxy socks5://user:pass@1.2.3.4:1080
+httpcrabber -l en -s quick --direct --no-browser          # use your own browser / device
+httpcrabber --no-anim                                      # plain output, no animations
 ```
+
+| Flag | Meaning |
+|---|---|
+| `-l, --lang {ru,en}` | Interface language |
+| `-s, --session NAME` | Session name → `LOGS/<name>/` |
+| `-p, --proxy PROXY` | Upstream proxy, any [format](#proxy-formats) |
+| `--direct` | No upstream proxy |
+| `--port PORT` | mitmproxy listen port (default `8080`, next free one if busy) |
+| `-o, --output DIR` | Where sessions go (default `./LOGS`) |
+| `--no-browser` | Don't launch Chrome — point any browser or device at `127.0.0.1:<port>` |
+| `--no-anim` | Disable animations |
+| `-V, --version` | Print version |
 
 ## Proxy formats
 
@@ -121,8 +188,7 @@ http://host:port
 https://user:pass@host:port
 ```
 
-Schemes: `http`, `https`, `socks5`, `socks5h`, `socks4`.
-Passwords are masked in the interface.
+Schemes: `http`, `https`, `socks5`, `socks5h`, `socks4`. Passwords are masked in the interface.
 
 ## Session output
 
@@ -146,6 +212,7 @@ If a session name already exists, `_2`, `_3` … is appended. **Nothing is ever 
 
 One JSON object per line, with an `event` field:
 `request` · `response` · `ws_open` · `ws_msg` · `ws_close` · `error`.
+Each record is flushed to disk immediately, so a crash or a hard kill loses nothing.
 
 ### Captured JavaScript
 
@@ -170,6 +237,16 @@ transparently, httpcrabber starts a local [pproxy](https://github.com/qwj/python
 bridge that speaks HTTP to mitmproxy and any scheme to your proxy. Both hops are on
 loopback, so the overhead is negligible.
 
+```
+src/httpcrabber/
+  cli.py       arguments, prompts, main()
+  session.py   orchestration: bridge → mitmproxy → CA → browser → live loop
+  capture.py   mitmproxy addon: JSONL dump, JS collector, live stats
+  proxy.py     upstream proxy parser        bridge.py   pproxy bridge
+  ca.py        CA install per OS            browser.py  Chrome discovery per OS
+  ui.py        animations, panels, feed     i18n.py     UI strings
+```
+
 ## ⚠️ Security
 
 **Captured traffic contains live credentials.** Session dumps routinely include
@@ -179,6 +256,8 @@ visited during the session.
 - `LOGS/` and `*.jsonl` are excluded by [`.gitignore`](.gitignore) — **keep it that way**.
 - Never commit, upload or share a session dump before reviewing it.
 - Treat a session folder as if it were your password manager export. Because effectively, it is.
+- The tool installs a locally generated root CA. [SECURITY.md](SECURITY.md) explains how to
+  remove it when you are done.
 
 ## Responsible use
 
@@ -186,6 +265,15 @@ This is a tool for security research, API debugging, and interoperability work o
 you own or are authorized to test. You are responsible for complying with applicable law,
 the terms of service of the sites you access, and the privacy of any third-party data you
 encounter. Do not use it to access systems without permission.
+
+## Contributing
+
+Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for setup,
+conventions and how to add a language. Security reports go through [SECURITY.md](SECURITY.md).
+
+```bash
+ruff check src tests run.py && pytest
+```
 
 ## License
 

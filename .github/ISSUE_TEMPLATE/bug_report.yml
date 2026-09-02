@@ -1,0 +1,58 @@
+name: 🐛 Bug report
+description: Something does not work as documented
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. **Do not paste session dumps or logs with cookies/tokens** —
+        redact anything from `LOGS/` before attaching it.
+  - type: input
+    id: version
+    attributes:
+      label: httpcrabber version
+      description: Output of `httpcrabber --version`
+      placeholder: httpcrabber 1.0.0
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options: [Windows, macOS, Linux]
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: "3.12.3"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. httpcrabber --lang en --direct --session test
+        2. open https://…
+        3. …
+  - type: textarea
+    id: output
+    attributes:
+      label: Terminal output / traceback
+      description: Run with `--no-anim` for a clean copy. Redact secrets.
+      render: text
+  - type: input
+    id: proxy
+    attributes:
+      label: Upstream proxy type (if any)
+      description: Scheme and whether it uses auth — never the credentials themselves.
+      placeholder: socks5 with user:pass

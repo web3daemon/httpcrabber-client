@@ -19,6 +19,12 @@ CONFDIR = Path.home() / ".mitmproxy"
 # Переопределяется через HTTPCRABBER_MAX_BODY: тяжёлые HTML/JSON-ответы (например,
 # залогиненный x.com/home или таймлайны) не влезают в 200 КБ.
 MAX_BODY_SIZE = int(os.environ.get("HTTPCRABBER_MAX_BODY", 200_000))
+
+# Бинарные тела по умолчанию заменяются плейсхолдером [binary, N bytes].
+# С HTTPCRABBER_BINARY_BODIES=1 тело <= MAX_BODY_SIZE сохраняется в дампе как
+# base64 (поле body: {"encoding":"base64", ...}) — иначе такие payload'ы теряются.
+CAPTURE_BINARY = os.environ.get("HTTPCRABBER_BINARY_BODIES", "").lower() in ("1", "true", "yes")
+
 DEFAULT_PROXY_PORT = 8080      # слушает mitmproxy (в него ходит браузер)
 DEFAULT_BRIDGE_PORT = 8081     # локальный мост pproxy (в него ходит mitmproxy)
 FEED_ROWS = 12                 # строк живой ленты в панели

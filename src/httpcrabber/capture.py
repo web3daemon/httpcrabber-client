@@ -1,5 +1,6 @@
 """Аддон mitmproxy: пишет сетевой дамп, собирает JavaScript и ведёт живую статистику."""
 
+import base64
 import contextlib
 import hashlib
 import json
@@ -13,7 +14,7 @@ from urllib.parse import urlsplit
 
 from mitmproxy import http
 
-from httpcrabber.config import MAX_BODY_SIZE
+from httpcrabber.config import CAPTURE_BINARY, MAX_BODY_SIZE
 
 _TEXTUAL = ("json", "text", "javascript", "xml", "html", "x-www-form")
 
@@ -22,6 +23,22 @@ def _truncate(text: str) -> str:
     if len(text) > MAX_BODY_SIZE:
         return text[:MAX_BODY_SIZE] + "...[TRUNCATED]"
     return text
+
+
+def _binary_body(content: bytes, ct: str = ""):
+    """Плейсхолдер для бинарного тела, либо base64 при CAPTURE_BINARY.
+
+    Кодируем только тела <= MAX_BODY_SIZE — обрезанный base64 не декодируется.
+    """
+    label = f"[binary, {len(content)} bytes{f', {ct}' if ct else ''}]"
+    if not CAPTURE_BINARY or len(content) > MAX_BODY_SIZE:
+        return label
+    return {
+        "encoding": "base64",
+        "bytes": len(content),
+        "content_type": ct or None,
+        "data": base64.b64encode(content).decode("ascii"),
+    }
 
 
 class JSCollector:
@@ -170,7 +187,7 @@ class NetworkLogger:
             try:
                 body = _truncate(req.get_text(strict=False) or "")
             except Exception:
-                body = f"[binary, {len(req.content)} bytes]"
+                body = _binary_body(req.content)
         with self.lock:
             self.hosts[req.pretty_host] += 1
             self.methods[req.method] += 1
@@ -194,12 +211,12 @@ class NetworkLogger:
                 try:
                     full = resp.get_text(strict=False) or ""
                 except Exception:
-                    body = f"[unreadable: {len(resp.content)} bytes]"
+                    body = _binary_body(resp.content, ct)
                 if full is not None:
                     self._collect_js(url, ct, full)  # из ПОЛНОГО тела, до обрезки
                     body = _truncate(full)
             else:
-                body = f"[binary, {len(resp.content)} bytes, {ct}]"
+                body = _binary_body(resp.content, ct)
 
         with self.lock:
             self.status_classes[f"{resp.status_code // 100}xx"] += 1

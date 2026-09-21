@@ -6,6 +6,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- `HTTPCRABBER_MAX_BODY` overrides the 200 KB body cap in the dump.
+- `HTTPCRABBER_BINARY_BODIES=1` stores binary bodies (≤ `MAX_BODY_SIZE`) as base64
+  in the dump instead of a `[binary, N bytes]` placeholder. Off by default.
+
 ## [1.0.0] — 2026-07-19
 
 First public release.

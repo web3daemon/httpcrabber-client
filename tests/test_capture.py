@@ -112,6 +112,21 @@ def test_binary_response_not_decoded(tmp_path):
     assert entry["body"].startswith("[binary, 6 bytes")
 
 
+def test_binary_body_base64_when_enabled(tmp_path, monkeypatch):
+    import base64 as b64
+
+    from httpcrabber import capture
+
+    monkeypatch.setattr(capture, "CAPTURE_BINARY", True)
+    raw = b"\x89PNG\x00\x01\x02\x03"
+    lg = NetworkLogger(tmp_path / "s.jsonl")
+    lg.response(_flow(url="http://h/i.png", ct="image/png", body=raw))
+    lg.done()
+    body = json.loads((tmp_path / "s.jsonl").read_text(encoding="utf-8"))["body"]
+    assert body["encoding"] == "base64" and body["bytes"] == len(raw)
+    assert b64.b64decode(body["data"]) == raw
+
+
 def test_feed_and_error(tmp_path):
     lg = NetworkLogger(tmp_path / "s.jsonl")
     f = _flow(status=503)

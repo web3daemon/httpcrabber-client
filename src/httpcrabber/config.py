@@ -1,6 +1,7 @@
 """Константы, палитра и изменяемые настройки времени выполнения."""
 
 import contextlib
+import os
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -14,7 +15,10 @@ DEFAULT_LOG_DIR = Path("LOGS")
 PROFILE_DIR = Path("chrome_profile_proxy")
 CONFDIR = Path.home() / ".mitmproxy"
 
-MAX_BODY_SIZE = 200_000        # тела в .jsonl режутся здесь; скрипты в js/ — целиком
+# Тела в .jsonl режутся по этой границе (скрипты в js/ — всегда целиком).
+# Переопределяется через HTTPCRABBER_MAX_BODY: тяжёлые HTML/JSON-ответы (например,
+# залогиненный x.com/home или таймлайны) не влезают в 200 КБ.
+MAX_BODY_SIZE = int(os.environ.get("HTTPCRABBER_MAX_BODY", 200_000))
 DEFAULT_PROXY_PORT = 8080      # слушает mitmproxy (в него ходит браузер)
 DEFAULT_BRIDGE_PORT = 8081     # локальный мост pproxy (в него ходит mitmproxy)
 FEED_ROWS = 12                 # строк живой ленты в панели

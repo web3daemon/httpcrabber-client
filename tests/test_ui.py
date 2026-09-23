@@ -142,3 +142,25 @@ def test_summary_stacks_columns_on_narrow_terminals(monkeypatch):
     out = _render(ui.summary_panel(cfg, _Logger(), 5))
     top = next(line for line in out.splitlines() if "TOP HOSTS" in line)
     assert "BREAKDOWN" not in top and "BREAKDOWN" in out
+
+
+def test_pixel_crab_is_symmetric_and_fits():
+    assert len({len(row) for row in ui.PIXEL_CRAB}) == 1
+    assert all(row == row[::-1] for row in ui.PIXEL_CRAB)
+    assert set("".join(ui.PIXEL_CRAB)) <= set(ui.CRAB_COLORS) | {"."}
+    lines = ui.pixel_crab().plain.splitlines()
+    assert len(lines) == (len(ui.PIXEL_CRAB) + 1) // 2
+    assert max(len(line) for line in lines) <= ui.CRAB_WIDTH
+
+
+def test_banner_shows_crab_only_when_it_fits(monkeypatch):
+    def rendered(width):
+        monkeypatch.setattr(type(ui.console), "width", property(lambda self: width))
+        c = Console(record=True, width=width, force_terminal=False)
+        c.print(ui.banner_panel(ui.banner_fits()))
+        return c.export_text()
+
+    assert "▀" in rendered(140)        # краб слева от арта
+    assert "▀" not in rendered(100)    # арт влезает, краб — нет
+    assert "H T T P" in rendered(60)   # узкий: краб над компактным заголовком
+    assert "▀" in rendered(60)

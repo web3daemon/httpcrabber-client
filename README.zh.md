@@ -2,45 +2,35 @@
 
 <img src="assets/logo.svg" alt="httpcrabber" width="880">
 
-<br>
+### 用于逆向分析 Web API 的网络层流量拦截工具
 
-**用于逆向分析 Web API 的网络层流量拦截工具。**
 对页面内的 JavaScript 防护完全隐形 —— 因为它从不进入页面。
 
-[English](README.md) · [Русский](README.ru.md) · [Español](README.es.md) · **中文**
-
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
+[![版本 v1.1.0](assets/badge-version.svg)](https://github.com/web3daemon/httpcrabber-client/releases/latest)
 [![Python 3.11+](assets/badge-python.svg)](https://www.python.org/)
 [![平台 Windows · macOS · Linux](assets/badge-platform.svg)](#环境要求)
 [![许可证 GPL-3.0](assets/badge-license.svg)](LICENSE)
 [![基于 mitmproxy](assets/badge-mitmproxy.svg)](https://mitmproxy.org/)
 
+[English](README.md) · [Русский](README.ru.md) · [Español](README.es.md) · **中文**
+
+<br>
+
+<img src="assets/demo.svg" alt="httpcrabber 演示：启动、实时拦截、会话汇总" width="100%">
+
+[**功能特性**](#功能特性) · [**安装**](#安装) · [**快速开始**](#快速开始) · [**命令行**](#命令行) · [**保存的内容**](#保存的内容) · [**工作原理**](#工作原理) · [**安全提示**](#-安全提示)
+
 </div>
 
----
+## ⚡ 30 秒上手
 
-<p align="center">
-  <img src="assets/screen-live.svg" alt="httpcrabber 实时拦截面板" width="100%">
-</p>
+```bash
+pip install git+https://github.com/web3daemon/httpcrabber-client.git
+httpcrabber
+```
 
-<details>
-<summary><b>目录</b></summary>
-
-- [为什么需要它](#为什么需要它)
-- [功能特性](#功能特性)
-- [环境要求](#环境要求)
-- [安装](#安装)
-- [快速开始](#快速开始)
-- [命令行](#命令行)
-- [代理格式](#代理格式)
-- [保存的内容](#保存的内容)
-- [工作原理](#工作原理)
-- [安全提示](#-安全提示)
-- [负责任地使用](#负责任地使用)
-- [参与贡献](#参与贡献)
-- [许可证](#许可证)
-
-</details>
+回答三个问题，照常浏览，关闭 Chrome —— 本次会话的所有请求、响应、WebSocket 帧和脚本都保存在 `LOGS/<会话名>/` 中。
 
 ## 为什么需要它
 

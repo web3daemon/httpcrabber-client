@@ -2,45 +2,35 @@
 
 <img src="assets/logo.svg" alt="httpcrabber" width="880">
 
-<br>
+### Interceptor de tráfico a nivel de red para hacer ingeniería inversa de APIs web
 
-**Interceptor de tráfico a nivel de red para hacer ingeniería inversa de APIs web.**
 Invisible para las protecciones JavaScript de la página, porque nunca entra en ella.
 
-[English](README.md) · [Русский](README.ru.md) · **Español** · [中文](README.zh.md)
-
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
+[![Versión v1.1.0](assets/badge-version.svg)](https://github.com/web3daemon/httpcrabber-client/releases/latest)
 [![Python 3.11+](assets/badge-python.svg)](https://www.python.org/)
 [![Plataformas Windows · macOS · Linux](assets/badge-platform.svg)](#requisitos)
 [![Licencia GPL-3.0](assets/badge-license.svg)](LICENSE)
 [![Basado en mitmproxy](assets/badge-mitmproxy.svg)](https://mitmproxy.org/)
 
+[English](README.md) · [Русский](README.ru.md) · **Español** · [中文](README.zh.md)
+
+<br>
+
+<img src="assets/demo.svg" alt="Demo de httpcrabber: arranque, intercepción en vivo, resumen" width="100%">
+
+[**Características**](#características) · [**Instalación**](#instalación) · [**Inicio rápido**](#inicio-rápido) · [**Línea de comandos**](#línea-de-comandos) · [**Qué se guarda**](#qué-se-guarda) · [**Cómo funciona**](#cómo-funciona) · [**Seguridad**](#-seguridad)
+
 </div>
 
----
+## ⚡ En marcha en 30 segundos
 
-<p align="center">
-  <img src="assets/screen-live.svg" alt="Panel de intercepción en vivo de httpcrabber" width="100%">
-</p>
+```bash
+pip install git+https://github.com/web3daemon/httpcrabber-client.git
+httpcrabber
+```
 
-<details>
-<summary><b>Índice</b></summary>
-
-- [Por qué](#por-qué)
-- [Características](#características)
-- [Requisitos](#requisitos)
-- [Instalación](#instalación)
-- [Inicio rápido](#inicio-rápido)
-- [Línea de comandos](#línea-de-comandos)
-- [Formatos de proxy](#formatos-de-proxy)
-- [Qué se guarda](#qué-se-guarda)
-- [Cómo funciona](#cómo-funciona)
-- [Seguridad](#-seguridad)
-- [Uso responsable](#uso-responsable)
-- [Contribuir](#contribuir)
-- [Licencia](#licencia)
-
-</details>
+Responde tres preguntas, navega con normalidad y cierra Chrome: cada petición, respuesta, trama WebSocket y script de la sesión queda en `LOGS/<nombre>/`.
 
 ## Por qué
 

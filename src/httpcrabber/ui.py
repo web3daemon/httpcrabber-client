@@ -4,7 +4,7 @@ import random
 import threading
 import time
 from collections import deque
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 
 from rich import box
 from rich.align import Align
@@ -58,6 +58,29 @@ _METHOD_STYLE = {
     "DELETE": ERR, "WS": MAG, "ERR": ERR,
 }
 _CLASS_STYLE = {"1xx": MUTED, "2xx": NEON, "3xx": CYAN, "4xx": WARN, "5xx": ERR}
+
+# Пиксельный краб — единый источник для терминала, логотипа и превью
+# (scripts/gen_logo.py). Хранится левая половина с центральным столбцом, правая —
+# зеркало. O — панцирь, H — блик, D — тень, W — белок глаза, K — зрачок и рот.
+_CRAB_LEFT = (
+    ".O...O.......",
+    ".OO.OO.......",
+    ".OOOOO..WWW..",
+    "..OOO...WKW..",
+    "...O....WWW..",
+    "...OO....O...",
+    "....OOOOOOOOO",
+    "...OOOHHOOOOO",
+    "OOOOOHHOOKOOO",
+    "...OOOOOOOKKK",
+    "OOOOOOOOOOOOO",
+    "...OODDDDDDDD",
+    "..O..O.......",
+    ".O....O......",
+)
+PIXEL_CRAB = tuple(row + row[-2::-1] for row in _CRAB_LEFT)
+CRAB_COLORS = {"O": "#ff5a36", "H": "#ff9a6e", "D": "#b8321b", "W": "#ffffff", "K": "#0b0f0c"}
+CRAB_WIDTH = len(PIXEL_CRAB[0])
 
 
 # ── цвет ─────────────────────────────────────────────────────────────────────
@@ -171,29 +194,36 @@ def matrix_rain(seconds: float = 1.3, fps: int = 18) -> None:
         return
     width = max(20, min(console.width, 120))
     height = max(6, min(12, console.height - 4))
-    heads = [random.randint(-height, 0) for _ in range(width)]
-    tail = len(_RAIN_SHADES)
+    frames = rain_frames(width, height)
 
     with Live(console=console, refresh_per_second=fps, transient=True) as live:
         end = time.monotonic() + seconds
         while time.monotonic() < end:
-            rows = [[(" ", None)] * width for _ in range(height)]
-            for x, head in enumerate(heads):
-                for depth in range(tail):
-                    y = head - depth
-                    if 0 <= y < height:
-                        rows[y][x] = (random.choice(_RAIN_CHARS), _RAIN_SHADES[tail - 1 - depth])
-                if random.random() > 0.12:
-                    heads[x] += 1
-                if heads[x] - tail > height:
-                    heads[x] = random.randint(-height, 0)
-            frame = Text()
-            for row in rows:
-                for ch, style in row:
-                    frame.append(ch, style=style)
-                frame.append("\n")
-            live.update(frame)
+            live.update(next(frames))
             time.sleep(1 / fps)
+
+
+def rain_frames(width: int, height: int) -> Iterator[Text]:
+    """Бесконечный поток кадров матричного дождя (его же рисует демо для README)."""
+    heads = [random.randint(-height, 0) for _ in range(width)]
+    tail = len(_RAIN_SHADES)
+    while True:
+        rows = [[(" ", None)] * width for _ in range(height)]
+        for x, head in enumerate(heads):
+            for depth in range(tail):
+                y = head - depth
+                if 0 <= y < height:
+                    rows[y][x] = (random.choice(_RAIN_CHARS), _RAIN_SHADES[tail - 1 - depth])
+            if random.random() > 0.12:
+                heads[x] += 1
+            if heads[x] - tail > height:
+                heads[x] = random.randint(-height, 0)
+        frame = Text()
+        for row in rows:
+            for ch, style in row:
+                frame.append(ch, style=style)
+            frame.append("\n")
+        yield frame
 
 
 def glitch_banner(frames: int = 9) -> None:
@@ -222,13 +252,42 @@ def banner_fits() -> bool:
     return console.width >= _ART_WIDTH + 6
 
 
+def pixel_crab() -> Text:
+    """Краб полублоками: две строки пикселей на одну строку терминала."""
+    out = Text()
+    rows = list(PIXEL_CRAB) + ["." * CRAB_WIDTH] * (len(PIXEL_CRAB) % 2)
+    for top, bottom in zip(rows[::2], rows[1::2], strict=True):
+        for a, b in zip(top, bottom, strict=True):
+            ca, cb = CRAB_COLORS.get(a), CRAB_COLORS.get(b)
+            if ca and cb:
+                out.append("▀", style=f"{ca} on {cb}")
+            elif ca:
+                out.append("▀", style=ca)
+            elif cb:
+                out.append("▄", style=cb)
+            else:
+                out.append(" ")
+        out.append("\n")
+    out.rstrip()
+    return out
+
+
 def compact_banner() -> Text:
     """Фолбэк для узкого терминала: градиентный заголовок вместо арта."""
     return gradient_text("H T T P C R A B B E R")
 
 
-def banner_panel(fits: bool = True) -> Panel:
-    art = gradient_banner() if fits else compact_banner()
+def banner_panel(fits: bool = True, noise: float = 0.0) -> Panel:
+    if fits and console.width >= _ART_WIDTH + CRAB_WIDTH + 14:
+        # Широкий терминал — краб слева от арта
+        art = Table.grid(padding=(0, 3))
+        art.add_column(vertical="middle")
+        art.add_column(vertical="middle")
+        art.add_row(pixel_crab(), gradient_banner(noise))
+    elif fits:
+        art = gradient_banner(noise)
+    else:
+        art = Group(Align.center(pixel_crab()), Text(""), Align.center(compact_banner()))
     title = Text.assemble(" 🦀 ", ("httpcrabber", NEON), (f"  v{__version__} ", DIM))
     tags = Text.assemble(
         " ", ("http", CYAN), (" · ", DIM), ("websocket", MAG), (" · ", DIM),
@@ -261,6 +320,15 @@ def step(msg: str, status: str = "ok") -> None:
     console.print(f"[{DIM}] {time.strftime('%H:%M:%S')}[/]  {_badge(f'{label:^4}', color)}  {msg}")
 
 
+def spinner_line(msg: str, frame: int, elapsed: float) -> Text:
+    """Строка ожидания — выровнена по статусным строкам step()."""
+    return Text.assemble(
+        (f" {time.strftime('%H:%M:%S')}  ", DIM),
+        (f"  {SPINNER[frame % len(SPINNER)]}   ", f"bold {ramp((frame % 24) / 23)}"),
+        ("  ", ""), (msg, WHITE), (f"  {elapsed:.1f}s", DIM),
+    )
+
+
 class Spinner:
     """`with Spinner(msg) as sp:` — крутит спиннер, пока идёт работа (синхронная
     или async), затем печатает итоговую строку-статус с бейджем OK / FAIL."""
@@ -281,12 +349,7 @@ class Spinner:
     def _spin(self) -> None:
         i, t0 = 0, time.monotonic()
         while not self._stop.is_set() and self._live is not None:
-            self._live.update(Text.assemble(
-                (f" {time.strftime('%H:%M:%S')}  ", DIM),
-                (f"  {SPINNER[i % len(SPINNER)]}   ", f"bold {ramp((i % 24) / 23)}"),
-                ("  ", ""), (self.msg, WHITE),
-                (f"  {time.monotonic() - t0:.1f}s", DIM),
-            ))
+            self._live.update(spinner_line(self.msg, i, time.monotonic() - t0))
             i += 1
             self._stop.wait(0.08)
 
@@ -524,4 +587,5 @@ def summary_panel(cfg, logger, duration: float) -> RenderableType:
 
 
 def farewell() -> None:
+    console.print(Align.center(pixel_crab()))
     typewriter(t("bye"), style=CYAN, delay=0.02)

@@ -2,45 +2,35 @@
 
 <img src="assets/logo.svg" alt="httpcrabber" width="880">
 
-<br>
+### Network-level traffic interceptor for reverse-engineering web APIs
 
-**Network-level traffic interceptor for reverse-engineering web APIs.**
 Invisible to in-page JavaScript protections — because it never touches the page.
 
-**English** · [Русский](README.ru.md) · [Español](README.es.md) · [中文](README.zh.md)
-
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
+[![Release v1.1.0](assets/badge-version.svg)](https://github.com/web3daemon/httpcrabber-client/releases/latest)
 [![Python 3.11+](assets/badge-python.svg)](https://www.python.org/)
 [![Platform Windows · macOS · Linux](assets/badge-platform.svg)](#requirements)
 [![License GPL-3.0](assets/badge-license.svg)](LICENSE)
 [![Built with mitmproxy](assets/badge-mitmproxy.svg)](https://mitmproxy.org/)
 
+**English** · [Русский](README.ru.md) · [Español](README.es.md) · [中文](README.zh.md)
+
+<br>
+
+<img src="assets/demo.svg" alt="httpcrabber demo: startup, live intercept, session summary" width="100%">
+
+[**Features**](#features) · [**Install**](#install) · [**Quick start**](#quick-start) · [**Command line**](#command-line) · [**Session output**](#session-output) · [**How it works**](#how-it-works) · [**Security**](#-security)
+
 </div>
 
----
+## ⚡ 30-second start
 
-<p align="center">
-  <img src="assets/screen-live.svg" alt="httpcrabber live intercept panel" width="100%">
-</p>
+```bash
+pip install git+https://github.com/web3daemon/httpcrabber-client.git
+httpcrabber
+```
 
-<details>
-<summary><b>Table of contents</b></summary>
-
-- [Why](#why)
-- [Features](#features)
-- [Requirements](#requirements)
-- [Install](#install)
-- [Quick start](#quick-start)
-- [Command line](#command-line)
-- [Proxy formats](#proxy-formats)
-- [Session output](#session-output)
-- [How it works](#how-it-works)
-- [Security](#-security)
-- [Responsible use](#responsible-use)
-- [Contributing](#contributing)
-- [License](#license)
-
-</details>
+Answer three prompts, browse as usual, close Chrome — every request, response, WebSocket frame and script of the session is in `LOGS/<name>/`.
 
 ## Why
 

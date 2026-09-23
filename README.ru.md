@@ -2,45 +2,35 @@
 
 <img src="assets/logo.svg" alt="httpcrabber" width="880">
 
-<br>
+### Перехватчик трафика сетевого уровня для реверс-инжиниринга веб-API
 
-**Перехватчик трафика сетевого уровня для реверс-инжиниринга веб-API.**
 Невидим для JS-защит на странице — потому что вообще не заходит внутрь страницы.
 
-[English](README.md) · **Русский** · [Español](README.es.md) · [中文](README.zh.md)
-
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
+[![Релиз v1.1.0](assets/badge-version.svg)](https://github.com/web3daemon/httpcrabber-client/releases/latest)
 [![Python 3.11+](assets/badge-python.svg)](https://www.python.org/)
 [![Платформы Windows · macOS · Linux](assets/badge-platform.svg)](#требования)
 [![Лицензия GPL-3.0](assets/badge-license.svg)](LICENSE)
 [![На базе mitmproxy](assets/badge-mitmproxy.svg)](https://mitmproxy.org/)
 
+[English](README.md) · **Русский** · [Español](README.es.md) · [中文](README.zh.md)
+
+<br>
+
+<img src="assets/demo.ru.svg" alt="Демо httpcrabber: старт, живой перехват, итоговая сводка" width="100%">
+
+[**Возможности**](#возможности) · [**Установка**](#установка) · [**Быстрый старт**](#быстрый-старт) · [**Командная строка**](#командная-строка) · [**Что сохраняется**](#что-сохраняется) · [**Как это работает**](#как-это-работает) · [**Безопасность**](#-безопасность)
+
 </div>
 
----
+## ⚡ Старт за 30 секунд
 
-<p align="center">
-  <img src="assets/screen-live.ru.svg" alt="Живая панель перехвата httpcrabber" width="100%">
-</p>
+```bash
+pip install git+https://github.com/web3daemon/httpcrabber-client.git
+httpcrabber
+```
 
-<details>
-<summary><b>Оглавление</b></summary>
-
-- [Зачем](#зачем)
-- [Возможности](#возможности)
-- [Требования](#требования)
-- [Установка](#установка)
-- [Быстрый старт](#быстрый-старт)
-- [Командная строка](#командная-строка)
-- [Форматы прокси](#форматы-прокси)
-- [Что сохраняется](#что-сохраняется)
-- [Как это работает](#как-это-работает)
-- [Безопасность](#-безопасность)
-- [Ответственное использование](#ответственное-использование)
-- [Участие в разработке](#участие-в-разработке)
-- [Лицензия](#лицензия)
-
-</details>
+Ответь на три вопроса, пользуйся браузером как обычно, закрой Chrome — все запросы, ответы, WebSocket-кадры и скрипты сессии лежат в `LOGS/<имя>/`.
 
 ## Зачем
 

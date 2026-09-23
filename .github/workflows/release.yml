@@ -1,0 +1,28 @@
+name: Release
+
+# Публикация релиза на GitHub → собираем wheel и sdist и прикладываем к нему.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  dist:
+    name: build & attach dist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install build
+      - run: python -m build
+      - name: Check the version matches the tag
+        run: |
+          ls dist/httpcrabber-"${GITHUB_REF_NAME#v}"-py3-none-any.whl
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" dist/* --clobber

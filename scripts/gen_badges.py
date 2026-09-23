@@ -6,6 +6,7 @@
 сетей, и README с внешними картинками там выглядел бы сломанным.
 """
 
+import re
 from pathlib import Path
 from xml.sax.saxutils import escape
 
@@ -58,7 +59,13 @@ def badge(label: str, value: str, color: str, filename: str) -> None:
     print(f"  {filename:24} {total:6.1f}x20  {alt}")
 
 
+def version() -> str:
+    init = OUT.parent / "src" / "httpcrabber" / "__init__.py"
+    return re.search(r'__version__ = "([^"]+)"', init.read_text(encoding="utf-8")).group(1)
+
+
 if __name__ == "__main__":
+    badge("Release", f"v{version()}", "#7f8cff", "badge-version.svg")
     badge("Python", "3.11+", "#39ff14", "badge-python.svg")
     badge("License", "GPL-3.0", "#ff2fd0", "badge-license.svg")
     badge("Platform", "Windows · macOS · Linux", "#00e5ff", "badge-platform.svg")

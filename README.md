@@ -19,29 +19,9 @@ Invisible to in-page JavaScript protections — because it never touches the pag
 
 ---
 
-```
-┌──────────────────────────── 🦀 SESSION LIVE ─────────────────────────────┐
-│                                                                          │
-│    Session  TARGET RECON                                                 │
-│   Upstream  socks5://user:****@1.2.3.4:1080                              │
-│  mitmproxy  127.0.0.1:8080                                               │
-│     Folder  LOGS/target_recon                                            │
-│                                                                          │
-│   ⠸  LIVE INTERCEPT                                                      │
-│   14:22:07  GET    200  https://cdn.target.com/static/js/main.a3f1c8…    │
-│   14:22:07  POST   403  https://api.target.com/v2/auth/challenge         │
-│   14:22:08  GET    304  https://target.com/assets/app.css                │
-│   14:22:08  POST   200  https://api.target.com/v2/graphql                │
-│   14:22:09  WS     →    wss://realtime.target.com/socket                 │
-│   14:22:10  GET    500  https://api.target.com/v2/telemetry/collect      │
-│   14:22:11  ERR    ···  https://blocked.tracker.io/beacon                │
-│   14:22:12  DELETE 204  https://api.target.com/v2/session                │
-│                                                                          │
-│   ● REQ 1478 ● RESP 1443 ● WS 12 ● JS 38 ● ERR 2   ▂▆█▄▂▁▁▄  03:41       │
-│                                                                          │
-│        Close Chrome or press Ctrl+C to finish and save the session.      │
-└──────────────────────────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="assets/screen-live.svg" alt="httpcrabber live intercept panel" width="100%">
+</p>
 
 <details>
 <summary><b>Table of contents</b></summary>
@@ -76,7 +56,7 @@ From the JavaScript's point of view, nothing is there.
 
 | | |
 |---|---|
-| 💚 **Animated hacker CLI** | Matrix rain, gradient glitch banner, typewriter, real `[ OK ]` status lines, spinners for real waits |
+| 💚 **Animated hacker CLI** | Matrix rain, gradient glitch banner, typewriter, color-coded status badges, spinners for real waits |
 | 📡 **Live intercept feed** | Requests in real time, colored methods and status codes, counters, traffic sparkline |
 | 📊 **Session analytics** | Top hosts, method and status breakdown, duration and dump size when the session ends |
 | 🧅 **Any upstream proxy** | `socks5` / `socks5h` / `socks4` / `http` / `https`, with or without auth, every common notation |
@@ -131,27 +111,18 @@ The tool asks for three things and handles the rest:
 2. **Upstream proxy** — paste it in any format, or press <kbd>Enter</kbd> to go direct
 3. **Session name** — e.g. `TARGET RECON`
 
+<p align="center">
+  <img src="assets/screen-start.svg" alt="httpcrabber startup: banner, session brief, status lines" width="100%">
+</p>
+
 It shows a session brief, installs the CA certificate if needed, starts Chrome through the
 proxy, and streams everything into the session folder. Browse normally — every request,
 response, WebSocket frame and script is captured. Close Chrome (or press <kbd>Ctrl+C</kbd>)
 to finish; you get an analytics panel and the folder path.
 
-```
-┌─────────────────────────────── ✓ SESSION FINISHED ────────────────────────────────┐
-│                                                                                   │
-│    Requests  1478        TOP HOSTS                                                │
-│   Responses  1443        api.target.com       ██████████████ 612                  │
-│   WebSocket  12          cdn.target.com       █████████ 380                       │
-│  JS scripts  38          static.target.com    █████ 214                           │
-│      Errors  2           tracker.io           ██ 96                               │
-│    Duration  03:41                                                                │
-│                          Methods  GET 1201 · POST 260 · OPTIONS 17                │
-│                          Status   2xx 1380 · 3xx 12 · 4xx 51                      │
-│                                                                                   │
-│      Folder  LOGS/target_recon                                                    │
-│        Dump  2.31 MB                                                              │
-└───────────────────────────────────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="assets/screen-summary.svg" alt="httpcrabber session summary" width="100%">
+</p>
 
 ## Command line
 
@@ -227,9 +198,20 @@ Each record is flushed to disk immediately, so a crash or a hard kill loses noth
 
 ## How it works
 
-```
-  Chrome ──▶ mitmproxy ──▶ pproxy bridge ──▶ your upstream proxy ──▶ target
-             (captures)     (scheme adapter)
+```mermaid
+flowchart LR
+    B["🌐 Chrome"] -->|HTTPS| M["🦀 mitmproxy<br/><sub>capture</sub>"]
+    M --> P["🔌 pproxy bridge<br/><sub>scheme adapter</sub>"]
+    P -->|"socks5 · http"| U["🧅 your upstream proxy"]
+    U --> T["🎯 target"]
+    M -.-> F[("📁 LOGS/session<br/><sub>JSONL + JS</sub>")]
+
+    classDef hop fill:#0b0f0c,stroke:#39ff14,color:#d6ded6,stroke-width:1.5px
+    classDef core fill:#0b0f0c,stroke:#ff2fd0,color:#ffffff,stroke-width:2px
+    classDef store fill:#0b0f0c,stroke:#00e5ff,color:#d6ded6,stroke-width:1.5px
+    class B,P,U,T hop
+    class M core
+    class F store
 ```
 
 mitmproxy natively supports only `http`/`https` upstream proxies. To make **SOCKS5** work

@@ -4,12 +4,15 @@ import random
 import threading
 import time
 from collections import deque
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 
+from rich import box
 from rich.align import Align
 from rich.console import Group, RenderableType
 from rich.live import Live
+from rich.measure import Measurement
 from rich.panel import Panel
+from rich.rule import Rule
 from rich.table import Table
 from rich.text import Text
 
@@ -18,9 +21,12 @@ from httpcrabber.config import (
     CYAN,
     DIM,
     ERR,
+    FAINT,
     FEED_ROWS,
     GRADIENT,
+    INK,
     MAG,
+    MUTED,
     NEON,
     WARN,
     WHITE,
@@ -38,6 +44,8 @@ BANNER = r"""
  ╚═╝  ╚═╝   ╚═╝      ╚═╝   ╚═╝      ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝
 """
 _LINES = BANNER.strip("\n").split("\n")
+_ART_WIDTH = max(len(line) for line in _LINES)
+_SHADOW = set("╗╝╚╔═║")  # «тень» шрифта ANSI Shadow — рисуем приглушённой для объёма
 
 _RAIN_CHARS = "01<>[]{}/\\|=+*#$%&@?!ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾅﾆﾇﾈﾊﾋﾎﾏﾐﾑﾒﾓﾔﾕﾗﾘﾜ"
 _RAIN_SHADES = ["#0a2f0a", "#0f5c0f", "#179317", "#25cc1b", "#39ff14", "#b9ffb0"]
@@ -49,18 +57,58 @@ _METHOD_STYLE = {
     "GET": CYAN, "POST": MAG, "PUT": WARN, "PATCH": WARN,
     "DELETE": ERR, "WS": MAG, "ERR": ERR,
 }
+_CLASS_STYLE = {"1xx": MUTED, "2xx": NEON, "3xx": CYAN, "4xx": WARN, "5xx": ERR}
+
+
+# ── цвет ─────────────────────────────────────────────────────────────────────
+
+def _hex(style: str) -> str:
+    """'bold #39ff14' → '#39ff14'."""
+    return style.split()[-1]
+
+
+def blend(a: str, b: str, k: float) -> str:
+    """Линейная смесь двух цветов: k=0 → a, k=1 → b."""
+    a, b = _hex(a).lstrip("#"), _hex(b).lstrip("#")
+    ch = (round(int(a[i:i + 2], 16) + (int(b[i:i + 2], 16) - int(a[i:i + 2], 16)) * k)
+          for i in (0, 2, 4))
+    return "#{:02x}{:02x}{:02x}".format(*ch)
+
+
+def ramp(k: float, stops: Sequence[str] = GRADIENT) -> str:
+    """Цвет в точке k∈[0,1] многоточечного градиента."""
+    k = min(1.0, max(0.0, k))
+    pos = k * (len(stops) - 1)
+    i = min(int(pos), len(stops) - 2)
+    return blend(stops[i], stops[i + 1], pos - i)
+
+
+def gradient_text(s: str, stops: Sequence[str] = GRADIENT, bold: bool = True) -> Text:
+    out = Text()
+    n = max(1, len(s) - 1)
+    for i, ch in enumerate(s):
+        out.append(ch, style=("bold " if bold else "") + ramp(i / n, stops))
+    return out
+
+
+def _soft(color: str, k: float = 0.45) -> str:
+    """Приглушённый вариант акцента — для рамок, чтобы не спорили с содержимым."""
+    return blend(color, "#000000", k)
 
 
 # ── примитивы ────────────────────────────────────────────────────────────────
 
 def gradient_banner(noise: float = 0.0) -> Text:
-    """Баннер с вертикальным градиентом; noise>0 подмешивает помехи."""
+    """Баннер с диагональным градиентом и приглушённой «тенью»; noise>0 — помехи."""
     out = Text()
-    for i, line in enumerate(_LINES):
-        color = GRADIENT[i * (len(GRADIENT) - 1) // max(1, len(_LINES) - 1)]
-        for ch in line:
+    last = max(1, len(_LINES) - 1)
+    for y, line in enumerate(_LINES):
+        for x, ch in enumerate(line):
+            color = ramp(0.8 * x / _ART_WIDTH + 0.2 * y / last)
             if noise and ch != " " and random.random() < noise:
                 out.append(random.choice(_GLITCH_CHARS), style=random.choice([MAG, CYAN, WARN]))
+            elif ch in _SHADOW:
+                out.append(ch, style=_soft(color, 0.55))
             else:
                 out.append(ch, style=f"bold {color}")
         out.append("\n")
@@ -73,6 +121,15 @@ def sparkline(values: Iterable[int], width: int = 24) -> str:
         return ""
     top = max(vals) or 1
     return "".join(_BLOCKS[min(8, int(v / top * 8))] for v in vals)
+
+
+def sparkline_text(values: Iterable[int], width: int = 24) -> Text:
+    """Та же спарклайн-строка, но каждый столбик окрашен по высоте."""
+    out = Text()
+    for ch in sparkline(values, width):
+        level = _BLOCKS.index(ch) / 8
+        out.append(ch, style=ramp(0.15 + 0.6 * level) if level else FAINT)
+    return out
 
 
 def status_style(code: object) -> str:
@@ -96,6 +153,15 @@ def fmt_size(n: int) -> str:
 def fmt_clock(seconds: float) -> str:
     s = int(seconds)
     return f"{s // 3600:02d}:{s % 3600 // 60:02d}:{s % 60:02d}" if s >= 3600 else f"{s // 60:02d}:{s % 60:02d}"
+
+
+def _badge(label: str, color: str) -> str:
+    """Плашка с тёмным текстом на цветном фоне (rich-разметка)."""
+    return f"[bold {INK} on {_hex(color)}] {label} [/]"
+
+
+def _title(icon: str, text: str, color: str) -> Text:
+    return Text.assemble((f" {icon} ", color), (text, color), " ")
 
 
 # ── анимации старта ──────────────────────────────────────────────────────────
@@ -153,17 +219,24 @@ def typewriter(text: str, style: str = CYAN, delay: float = 0.014) -> None:
 
 def banner_fits() -> bool:
     """ASCII-арт шириной ~91 символ; в узком терминале он бы развалился на переносы."""
-    return console.width >= max(len(line) for line in _LINES) + 6
+    return console.width >= _ART_WIDTH + 6
 
 
 def compact_banner() -> Text:
     """Фолбэк для узкого терминала: градиентный заголовок вместо арта."""
-    word = "H T T P C R A B B E R"
-    out = Text()
-    for i, ch in enumerate(word):
-        color = GRADIENT[i * (len(GRADIENT) - 1) // max(1, len(word) - 1)]
-        out.append(ch, style=f"bold {color}")
-    return out
+    return gradient_text("H T T P C R A B B E R")
+
+
+def banner_panel(fits: bool = True) -> Panel:
+    art = gradient_banner() if fits else compact_banner()
+    title = Text.assemble(" 🦀 ", ("httpcrabber", NEON), (f"  v{__version__} ", DIM))
+    tags = Text.assemble(
+        " ", ("http", CYAN), (" · ", DIM), ("websocket", MAG), (" · ", DIM),
+        ("socks5", WARN), (" · ", DIM), ("js capture", NEON), " ",
+    )
+    return Panel(Align.center(art), title=title, title_align="left", subtitle=tags,
+                 subtitle_align="right", box=box.ROUNDED, border_style=_soft(MAG, 0.5),
+                 padding=(1 if fits else 0, 2))
 
 
 def banner() -> None:
@@ -173,24 +246,24 @@ def banner() -> None:
     fits = banner_fits()
     if fits:
         glitch_banner()
-    art = gradient_banner() if fits else compact_banner()
-    title = Text.assemble(("🦀 ", ""), ("httpcrabber ", NEON), (f"v{__version__}", DIM))
-    console.print(Panel(Align.center(art), title=title, border_style=MAG, padding=(0, 2)))
-    typewriter(t("tagline"))
+    console.print(banner_panel(fits))
+    typewriter(t("tagline"), style=MUTED)
     console.print()
 
 
 # ── статусные строки ─────────────────────────────────────────────────────────
 
+_STEP = {"ok": ("OK", NEON), "fail": ("FAIL", ERR), "work": ("WAIT", WARN), "info": ("INFO", CYAN)}
+
+
 def step(msg: str, status: str = "ok") -> None:
-    mark, color = {"ok": ("OK", NEON), "fail": ("!!", ERR), "work": ("··", WARN),
-                   "info": ("--", CYAN)}[status]
-    console.print(f"[{DIM}]\\[[/][{color}] {mark} [/][{DIM}]][/] {msg}")
+    label, color = _STEP[status]
+    console.print(f"[{DIM}] {time.strftime('%H:%M:%S')}[/]  {_badge(f'{label:^4}', color)}  {msg}")
 
 
 class Spinner:
     """`with Spinner(msg) as sp:` — крутит спиннер, пока идёт работа (синхронная
-    или async), затем печатает итоговую строку [ OK ] / [ !! ]."""
+    или async), затем печатает итоговую строку-статус с бейджем OK / FAIL."""
 
     def __init__(self, msg: str):
         self.msg = msg
@@ -206,10 +279,14 @@ class Spinner:
         self._final = (msg or self.msg, "fail")
 
     def _spin(self) -> None:
-        i = 0
+        i, t0 = 0, time.monotonic()
         while not self._stop.is_set() and self._live is not None:
             self._live.update(Text.assemble(
-                (f" {SPINNER[i % len(SPINNER)]} ", WARN), (self.msg, WHITE)))
+                (f" {time.strftime('%H:%M:%S')}  ", DIM),
+                (f"  {SPINNER[i % len(SPINNER)]}   ", f"bold {ramp((i % 24) / 23)}"),
+                ("  ", ""), (self.msg, WHITE),
+                (f"  {time.monotonic() - t0:.1f}s", DIM),
+            ))
             i += 1
             self._stop.wait(0.08)
 
@@ -237,32 +314,60 @@ class Spinner:
 def brief_panel(cfg) -> Panel:
     """Панель «бриф сессии» перед запуском."""
     tbl = Table.grid(padding=(0, 2))
-    tbl.add_column(justify="right", style=DIM)
+    tbl.add_column(no_wrap=True)
+    tbl.add_column(style=DIM, no_wrap=True)
     tbl.add_column(style=WHITE)
-    tbl.add_row(t("b_session"), f"[{MAG}]{cfg.name}[/]")
-    tbl.add_row(t("b_upstream"),
-                f"[{CYAN}]{cfg.proxy.display}[/]" if cfg.proxy else f"[{DIM}]{t('direct')}[/]")
-    tbl.add_row(t("b_listen"), f"127.0.0.1:{cfg.proxy_port}")
-    tbl.add_row(t("b_browser"),
-                t("browser_auto") if cfg.launch_browser
-                else t("browser_manual", port=cfg.proxy_port))
-    tbl.add_row(t("b_output"), str(cfg.session_dir))
-    return Panel(tbl, title=f"[{CYAN}]▸ {t('brief_title')}[/]", border_style=CYAN,
-                 padding=(0, 2))
+    rows = [
+        (t("b_session"), f"[{MAG}]{cfg.name}[/]"),
+        (t("b_upstream"),
+         f"[{CYAN}]{cfg.proxy.display}[/]" if cfg.proxy else f"[{MUTED}]{t('direct')}[/]"),
+        (t("b_listen"), f"127.0.0.1:[{NEON}]{cfg.proxy_port}[/]"),
+        (t("b_browser"),
+         t("browser_auto") if cfg.launch_browser
+         else f"[{WARN}]{t('browser_manual', port=cfg.proxy_port)}[/]"),
+        (t("b_output"), f"[{MUTED}]{cfg.session_dir}[/]"),
+    ]
+    for i, (label, value) in enumerate(rows):
+        tbl.add_row(Text("◆", style=ramp(i / (len(rows) - 1))), label, value)
+    return Panel(tbl, title=_title("◈", t("brief_title"), CYAN), title_align="left",
+                 box=box.ROUNDED, border_style=_soft(CYAN), padding=(1, 3), expand=False)
+
+
+def _split_url(url: str) -> tuple[str, str]:
+    """'https://host/path?q' → ('host', '/path?q') — хост ярче, путь тише."""
+    rest = url.split("://", 1)[-1]
+    slash = rest.find("/")
+    return (rest, "") if slash < 0 else (rest[:slash], rest[slash:])
 
 
 def render_feed(logger, rows: int, width: int) -> Text:
     tail = logger.feed_tail(rows)
+    out = Text(no_wrap=True, overflow="ellipsis")
     if not tail:
-        return Text(f"   {t('waiting')}", style=DIM)
-    out = Text()
-    avail = max(12, width - 26)
-    for ts, tag, code, url in tail:
-        out.append(f" {ts}  ", style=DIM)
-        out.append(f"{str(tag)[:6]:<7}", style=_METHOD_STYLE.get(tag, "white"))
-        out.append(f"{str(code) if code is not None else '···':<4} ", style=status_style(code))
-        out.append(url if len(url) <= avail else url[: avail - 1] + "…", style="white")
-        out.append("\n")
+        out.append(f"   {t('waiting')}", style=DIM)
+        out.append("\n" * max(0, rows - 1))
+        return out
+    sep = ("│", FAINT)
+    avail = max(12, width - 28)
+    for i, (ts, tag, code, url) in enumerate(tail):
+        newest = i == len(tail) - 1
+        host, path = _split_url(url)
+        if len(host) + len(path) > avail:
+            if len(host) >= avail:
+                host, path = host[: avail - 1] + "…", ""
+            else:
+                path = path[: avail - len(host) - 1] + "…"
+        out.append("▸ " if newest else "  ", style=NEON)
+        out.append(f"{ts} ", style=MUTED if newest else DIM)
+        out.append(*sep)
+        out.append(f" {str(tag)[:7]:<8}", style=_METHOD_STYLE.get(tag, WHITE))
+        out.append(f"{str(code) if code is not None else '···':<4}", style=status_style(code))
+        out.append(*sep)
+        out.append(f" {host}", style=WHITE if newest else "white")
+        out.append(path, style=MUTED if newest else DIM)
+        if i < len(tail) - 1:
+            out.append("\n")
+    out.append("\n" * (rows - len(tail)))  # фиксированная высота — панель не «прыгает»
     return out
 
 
@@ -270,19 +375,24 @@ def render_live(cfg, logger, start_ts: float, rate: deque, frame: int) -> Panel:
     s = logger.stats
     width = min(console.width, 118) - 8
 
-    head = Table.grid(padding=(0, 2))
-    head.add_column(justify="right", style=DIM)
-    head.add_column(style=WHITE)
-    head.add_row(t("l_session"), f"[{MAG}]{cfg.name}[/]")
-    head.add_row(t("l_proxy"), cfg.proxy.display if cfg.proxy else t("direct"))
-    head.add_row(t("l_listen"), f"127.0.0.1:{cfg.proxy_port}")
-    head.add_row(t("l_log"), str(cfg.session_dir))
+    head = Table.grid(padding=(0, 2), expand=True)
+    head.add_column(justify="right", style=DIM, no_wrap=True)
+    head.add_column(style=WHITE, ratio=1, no_wrap=True, overflow="ellipsis")
+    head.add_column(justify="right", style=DIM, no_wrap=True)
+    head.add_column(style=WHITE, ratio=1, no_wrap=True, overflow="ellipsis")
+    head.add_row(t("l_session"), f"[{MAG}]{cfg.name}[/]",
+                 t("l_proxy"), f"[{CYAN}]{cfg.proxy.display}[/]" if cfg.proxy
+                 else f"[{MUTED}]{t('direct')}[/]")
+    head.add_row(t("l_listen"), f"127.0.0.1:[{NEON}]{cfg.proxy_port}[/]",
+                 t("l_log"), f"[{MUTED}]{cfg.session_dir}[/]")
 
     spin = SPINNER[frame % len(SPINNER)] if settings.anim else "●"
-    feed_head = Text(f" {spin}  {t('feed_title')}", style=NEON)
+    feed_rule = Rule(Text.assemble((f" {spin} ", NEON), (t("feed_title"), NEON), " "),
+                     align="left", style=FAINT)
+    cols = Text(f"  {'TIME':<11}{'METHOD':<8}{'CODE':<4}  URL", style=_soft(DIM, 0.3))
 
     # Короткие теги, чтобы строка гарантированно влезала в одну линию.
-    bar = Text()
+    bar = Text(no_wrap=True, overflow="ellipsis")
     for label, value, color in (
         ("REQ", s["request"], CYAN), ("RESP", s["response"], NEON), ("WS", s["ws"], MAG),
         ("JS", s["js"], WARN), ("ERR", s["error"], ERR if s["error"] else DIM),
@@ -290,73 +400,127 @@ def render_live(cfg, logger, start_ts: float, rate: deque, frame: int) -> Panel:
         bar.append(" ● ", style=color)
         bar.append(f"{label} ", style=DIM)
         bar.append(str(value), style=color)
-    bar.append(f"   {sparkline(rate, 22)}", style=NEON)
-    bar.append(f"  {fmt_clock(time.monotonic() - start_ts)}", style=CYAN)
+    clock = Text.assemble(("  ", ""), sparkline_text(rate, 22),
+                          (f"  {fmt_clock(time.monotonic() - start_ts)}", CYAN))
+    stats = Table.grid(expand=True)
+    stats.add_column(no_wrap=True)
+    stats.add_column(justify="right", no_wrap=True)
+    stats.add_row(bar, clock)
 
+    # REC мигает раз в полсекунды — видно, что сессия жива, даже без трафика.
+    rec_on = not settings.anim or (frame // 6) % 2 == 0
+    title = Text.assemble(" 🦀 ", (t("live_title"), NEON), "  ",
+                          ("● REC", ERR if rec_on else DIM), " ")
     hint = t("live_hint") if cfg.launch_browser else t("live_hint_manual")
-    body = Group(head, Text(""), feed_head, render_feed(logger, FEED_ROWS, width),
-                 Text(""), bar, Text(""), Align.center(Text(hint, style=DIM)))
-    return Panel(body, title=f"[{NEON}]🦀 {t('live_title')}[/]", border_style=NEON,
+    body = Group(head, Text(""), feed_rule, cols, render_feed(logger, FEED_ROWS, width),
+                 Rule(style=FAINT), stats)
+    return Panel(body, title=title, title_align="left", subtitle=Text(f" {hint} ", style=DIM),
+                 subtitle_align="center", box=box.ROUNDED, border_style=_soft(NEON, 0.35),
                  padding=(1, 2))
 
 
-def _hbar(value: int, top: int, width: int = 14) -> str:
-    return "█" * max(1, round(value / top * width)) if top else ""
+def _hbar(value: int, top: int, width: int = 14) -> Text:
+    """Горизонтальный бар с градиентной заливкой и тёмной «дорожкой»."""
+    filled = max(1, round(value / top * width)) if top else 0
+    out = Text()
+    for i in range(width):
+        out.append("━", style=ramp(i / max(1, width - 1) * 0.6) if i < filled else FAINT)
+    return out
+
+
+def _stacked(parts: list[tuple[str, int]], width: int = 28) -> Text:
+    """Одна полоса, поделённая по долям классов статусов."""
+    total = sum(n for _, n in parts)
+    out = Text()
+    if not total:
+        return out.append("━" * width, style=FAINT)
+    used = 0
+    for i, (cls, n) in enumerate(parts):
+        seg = width - used if i == len(parts) - 1 else max(1, round(n / total * width))
+        seg = min(seg, width - used)
+        out.append("━" * seg, style=_CLASS_STYLE.get(cls, MUTED))
+        used += seg
+    return out
+
+
+def _tile(value: object, label: str, color: str) -> Text:
+    return Text.assemble(("▎", color), (str(value), color), "\n",
+                         ("▎", _soft(color, 0.6)), (label.upper(), DIM))
 
 
 def summary_panel(cfg, logger, duration: float) -> RenderableType:
     s = logger.stats
     size = cfg.log_path.stat().st_size if cfg.log_path.exists() else 0
 
-    left = Table.grid(padding=(0, 2))
-    left.add_column(justify="right", style=DIM)
-    left.add_column(style=WHITE)
-    left.add_row(t("l_req"), f"[{CYAN}]{s['request']}[/]")
-    left.add_row(t("l_resp"), f"[{NEON}]{s['response']}[/]")
-    left.add_row(t("l_ws"), f"[{MAG}]{s['ws']}[/]")
-    left.add_row(t("l_js"), f"[{WARN}]{s['js']}[/]")
-    left.add_row(t("l_err"), f"[{ERR}]{s['error']}[/]" if s["error"] else "0")
-    left.add_row(t("s_duration"), fmt_clock(duration))
+    tiles = Table.grid(expand=True, padding=(0, 1))
+    cells = [
+        (s["request"], t("l_req"), CYAN), (s["response"], t("l_resp"), NEON),
+        (s["ws"], t("l_ws"), MAG), (s["js"], t("l_js"), WARN),
+        (s["error"], t("l_err"), ERR if s["error"] else DIM),
+        (fmt_clock(duration), t("s_duration"), "bold #e8f0e8"),
+    ]
+    for _ in cells:
+        tiles.add_column(ratio=1, no_wrap=True, overflow="ellipsis")
+    tiles.add_row(*(_tile(*c) for c in cells))
 
-    # Топ хостов и строки «методы/статусы» — РАЗНЫЕ таблицы: в одной общей длинная
+    # Топ хостов и «методы/статусы» — РАЗНЫЕ таблицы: в одной общей длинная
     # строка методов растягивала колонку баров и уезжала на перенос.
     hosts = Table.grid(padding=(0, 1))
-    hosts.add_column(style=WHITE, no_wrap=True)
-    hosts.add_column(style=NEON, no_wrap=True)
-    hosts.add_column(justify="right", style=DIM)
+    hosts.add_column(style=WHITE, no_wrap=True, max_width=30, overflow="ellipsis")
+    hosts.add_column(no_wrap=True)
+    hosts.add_column(justify="right", style=WHITE, no_wrap=True)
+    hosts.add_column(justify="right", style=DIM, no_wrap=True)
     top = logger.hosts.most_common(6)
     if top:
-        peak = top[0][1]
+        peak, total = top[0][1], sum(logger.hosts.values()) or 1
         for host, n in top:
-            hosts.add_row(host[:34], _hbar(n, peak), str(n))
+            hosts.add_row(host, _hbar(n, peak), str(n), f"{n / total:.0%}")
     else:
-        hosts.add_row(f"[{DIM}]{t('s_nothing')}[/]", "", "")
+        hosts.add_row(f"[{DIM}]{t('s_nothing')}[/]", "", "", "")
 
+    def joined(items, style_of) -> Text:
+        out = Text()
+        for i, (k, n) in enumerate(items):
+            if i:
+                out.append(" · ", style=FAINT)
+            out.append(f"{k} ", style=style_of(k))
+            out.append(str(n), style=WHITE)
+        return out if items else Text("—", style=DIM)
+
+    classes = sorted(logger.status_classes.items())
     meta = Table.grid(padding=(0, 2))
-    meta.add_column(style=DIM)
-    meta.add_column(style=WHITE)
-    methods = " · ".join(f"{m} {n}" for m, n in logger.methods.most_common(4))
-    status = " · ".join(f"{c} {n}" for c, n in sorted(logger.status_classes.items()))
-    meta.add_row(t("s_methods"), methods or "—")
-    meta.add_row(t("s_status"), status or "—")
+    meta.add_column(style=DIM, no_wrap=True)
+    meta.add_column()
+    meta.add_row(t("s_methods"),
+                 joined(logger.methods.most_common(4), lambda m: _METHOD_STYLE.get(m, WHITE)))
+    meta.add_row(t("s_status"), joined(classes, lambda c: _CLASS_STYLE.get(c, MUTED)))
+    meta.add_row("", _stacked(classes))
 
-    right = Group(Text(t("s_top_hosts"), style=CYAN), hosts, Text(""), meta)
+    left = Group(Text(t("s_top_hosts"), style=CYAN), hosts)
+    right = Group(Text(t("s_breakdown"), style=CYAN), meta)
+    # Рядом — если обе колонки влезают целиком, иначе друг под другом: сжатая
+    # таблица хостов резала бы и бары, и числа.
+    inner = console.width - 6
+    need = sum(Measurement.get(console, console.options, r).maximum for r in (left, right)) + 4
+    if need <= inner:
+        grid = Table.grid(padding=(0, 4))
+        grid.add_column()
+        grid.add_column()
+        grid.add_row(left, right)
+    else:
+        grid = Group(left, Text(""), right)
 
-    grid = Table.grid(padding=(0, 4))
-    grid.add_column()
-    grid.add_column()
-    grid.add_row(left, right)
-
-    # Путь к папке — отдельной строкой на всю ширину: длинный путь в левой
-    # колонке сжимал бы «топ хостов» до нечитаемого.
+    # Путь к папке — отдельной строкой на всю ширину: длинный путь в колонке
+    # сжимал бы «топ хостов» до нечитаемого.
     footer = Table.grid(padding=(0, 2))
-    footer.add_column(justify="right", style=DIM)
+    footer.add_column(justify="right", style=DIM, no_wrap=True)
     footer.add_column(style=WHITE)
     footer.add_row(t("s_saved"), f"[{MAG}]{cfg.session_dir}[/]")
-    footer.add_row(t("s_size"), fmt_size(size))
+    footer.add_row(t("s_size"), f"[{WHITE}]{fmt_size(size)}[/]")
 
-    body = Group(grid, Text(""), footer)
-    return Panel(body, title=f"[{NEON}]✓ {t('summary')}[/]", border_style=MAG, padding=(1, 2))
+    body = Group(tiles, Rule(style=FAINT), grid, Rule(style=FAINT), footer)
+    return Panel(body, title=_title("✓", t("summary"), NEON), title_align="left",
+                 box=box.ROUNDED, border_style=_soft(MAG, 0.4), padding=(1, 2))
 
 
 def farewell() -> None:

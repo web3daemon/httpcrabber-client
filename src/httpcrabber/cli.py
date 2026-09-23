@@ -21,8 +21,10 @@ Q_STYLE = QStyle([
     ("pointer", "fg:#39ff14 bold"),
     ("highlighted", "fg:#39ff14 bold"),
     ("selected", "fg:#00e5ff"),
-    ("instruction", "fg:#5f6f5f"),
+    ("instruction", "fg:#5f6f5f italic"),
+    ("text", "fg:#d6ded6"),
 ])
+QMARK = "◆"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -49,14 +51,15 @@ def _ask_lang() -> str | None:
     return questionary.select(
         STRINGS["ru"]["ask_lang"],
         choices=[questionary.Choice("Русский", "ru"), questionary.Choice("English", "en")],
-        style=Q_STYLE,
+        qmark=QMARK, pointer="❯", style=Q_STYLE,
     ).ask()
 
 
 def _ask_proxy() -> Proxy | None | bool:
     """Proxy | None (прямое) | False (отмена)."""
     while True:
-        raw = questionary.text(t("ask_proxy"), instruction=t("proxy_hint"), style=Q_STYLE).ask()
+        raw = questionary.text(t("ask_proxy"), instruction=t("proxy_hint"), qmark=QMARK,
+                                 style=Q_STYLE).ask()
         if raw is None:
             return False
         if not raw.strip():
@@ -74,7 +77,7 @@ def _ask_proxy() -> Proxy | None | bool:
 
 def _ask_session() -> str | None:
     while True:
-        name = questionary.text(t("ask_session"), style=Q_STYLE).ask()
+        name = questionary.text(t("ask_session"), qmark=QMARK, style=Q_STYLE).ask()
         if name is None:
             return None
         if name.strip():

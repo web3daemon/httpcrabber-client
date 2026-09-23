@@ -50,12 +50,15 @@ src/httpcrabber/
 
 - **i18n:** every UI string lives in `i18n.py`, in *every* language. A test enforces
   identical key sets and matching `{placeholders}` — add the key to both `ru` and `en`.
-- **No fake progress.** Status lines (`[ OK ]`, spinners) must reflect real work. Don't add
+- **No fake progress.** Status lines (`OK` / `FAIL` badges, spinners) must reflect real work. Don't add
   decorative "system check" steps that verify nothing.
 - **Crash-safety over cleverness.** The dump is line-buffered so every record is on disk
   immediately; cleanup runs even on a hard `Ctrl+C`. Keep it that way.
 - **Cross-platform.** Anything touching the OS (paths, certificates, browsers) must handle
   Windows, macOS and Linux, or fail with a clear message.
+- **Screenshots follow the UI.** The terminal images in the READMEs are real renders of
+  `ui.py` on demo data. After changing anything visual, run `python scripts/gen_screenshots.py`
+  and commit the updated `assets/screen-*.svg`.
 - **Style:** `ruff` is the only arbiter. Line length 100. Comments explain *why*, not *what*.
 
 ## Pull requests

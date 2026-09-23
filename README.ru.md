@@ -19,29 +19,9 @@
 
 ---
 
-```
-┌─────────────────────────── 🦀 СЕССИЯ АКТИВНА ────────────────────────────┐
-│                                                                          │
-│     Сессия  TARGET RECON                                                 │
-│   Upstream  socks5://user:****@1.2.3.4:1080                              │
-│  mitmproxy  127.0.0.1:8080                                               │
-│      Папка  LOGS/target_recon                                            │
-│                                                                          │
-│   ⠸  ПЕРЕХВАТ В РЕАЛЬНОМ ВРЕМЕНИ                                         │
-│   14:22:07  GET    200  https://cdn.target.com/static/js/main.a3f1c8…    │
-│   14:22:07  POST   403  https://api.target.com/v2/auth/challenge         │
-│   14:22:08  GET    304  https://target.com/assets/app.css                │
-│   14:22:08  POST   200  https://api.target.com/v2/graphql                │
-│   14:22:09  WS     →    wss://realtime.target.com/socket                 │
-│   14:22:10  GET    500  https://api.target.com/v2/telemetry/collect      │
-│   14:22:11  ERR    ···  https://blocked.tracker.io/beacon                │
-│   14:22:12  DELETE 204  https://api.target.com/v2/session                │
-│                                                                          │
-│   ● REQ 1478 ● RESP 1443 ● WS 12 ● JS 38 ● ERR 2   ▂▆█▄▂▁▁▄  03:41       │
-│                                                                          │
-│     Закрой Chrome или нажми Ctrl+C, чтобы завершить и сохранить сессию.  │
-└──────────────────────────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="assets/screen-live.ru.svg" alt="Живая панель перехвата httpcrabber" width="100%">
+</p>
 
 <details>
 <summary><b>Оглавление</b></summary>
@@ -76,7 +56,7 @@ DevTools браузера можно обнаружить. Антибот-скр
 
 | | |
 |---|---|
-| 💚 **Анимированный hacker-CLI** | Матричный дождь, градиентный глитч-баннер, печатная машинка, честные статусы `[ OK ]`, спиннеры на реальных ожиданиях |
+| 💚 **Анимированный hacker-CLI** | Матричный дождь, градиентный глитч-баннер, печатная машинка, цветные статус-бейджи, спиннеры на реальных ожиданиях |
 | 📡 **Живая лента перехвата** | Запросы в реальном времени, подсветка методов и статус-кодов, счётчики, спарклайн трафика |
 | 📊 **Аналитика сессии** | Топ хостов, разбивка по методам и статусам, длительность и размер дампа по завершении |
 | 🧅 **Любой upstream-прокси** | `socks5` / `socks5h` / `socks4` / `http` / `https`, с авторизацией и без, во всех распространённых форматах |
@@ -131,27 +111,18 @@ httpcrabber
 2. **Upstream-прокси** — вставь в любом формате или нажми <kbd>Enter</kbd> для прямого соединения
 3. **Название сессии** — например `TARGET RECON`
 
+<p align="center">
+  <img src="assets/screen-start.ru.svg" alt="Старт httpcrabber: баннер, бриф сессии, статусы" width="100%">
+</p>
+
 Покажет бриф сессии, поставит CA-сертификат, если нужно, запустит Chrome через прокси и
 начнёт писать всё в папку сессии. Просто пользуйся браузером — каждый запрос, ответ,
 WebSocket-кадр и скрипт будут сохранены. Закрой Chrome (или нажми <kbd>Ctrl+C</kbd>) —
 получишь панель аналитики и путь к папке.
 
-```
-┌─────────────────────────────── ✓ СЕССИЯ ЗАВЕРШЕНА ────────────────────────────────┐
-│                                                                                   │
-│     Запросы  1478        ТОП ХОСТОВ                                               │
-│      Ответы  1443        api.target.com       ██████████████ 612                  │
-│   WebSocket  12          cdn.target.com       █████████ 380                       │
-│  JS-скрипты  38          static.target.com    █████ 214                           │
-│      Ошибки  2           tracker.io           ██ 96                               │
-│       Время  03:41                                                                │
-│                          Методы   GET 1201 · POST 260 · OPTIONS 17                │
-│                          Статусы  2xx 1380 · 3xx 12 · 4xx 51                      │
-│                                                                                   │
-│       Папка  LOGS/target_recon                                                    │
-│        Дамп  2.31 MB                                                              │
-└───────────────────────────────────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="assets/screen-summary.ru.svg" alt="Итоговая сводка сессии httpcrabber" width="100%">
+</p>
 
 ## Командная строка
 
@@ -227,9 +198,20 @@ LOGS/
 
 ## Как это работает
 
-```
-  Chrome ──▶ mitmproxy ──▶ мост pproxy ──▶ твой upstream-прокси ──▶ цель
-             (перехват)     (адаптер схем)
+```mermaid
+flowchart LR
+    B["🌐 Chrome"] -->|HTTPS| M["🦀 mitmproxy<br/><sub>перехват</sub>"]
+    M --> P["🔌 мост pproxy<br/><sub>адаптер схем</sub>"]
+    P -->|"socks5 · http"| U["🧅 твой upstream-прокси"]
+    U --> T["🎯 цель"]
+    M -.-> F[("📁 LOGS/сессия<br/><sub>JSONL + JS</sub>")]
+
+    classDef hop fill:#0b0f0c,stroke:#39ff14,color:#d6ded6,stroke-width:1.5px
+    classDef core fill:#0b0f0c,stroke:#ff2fd0,color:#ffffff,stroke-width:2px
+    classDef store fill:#0b0f0c,stroke:#00e5ff,color:#d6ded6,stroke-width:1.5px
+    class B,P,U,T hop
+    class M core
+    class F store
 ```
 
 mitmproxy нативно поддерживает только `http`/`https` в качестве upstream-прокси. Чтобы

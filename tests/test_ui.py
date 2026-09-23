@@ -119,3 +119,26 @@ def test_panels_are_panels():
     cfg = make_config("P", None)
     assert isinstance(ui.render_live(cfg, _Logger(), time.monotonic(), deque(), 0), Panel)
     assert isinstance(ui.brief_panel(cfg), Panel)
+
+
+def test_color_helpers():
+    assert ui.blend("#000000", "#ffffff", 0) == "#000000"
+    assert ui.blend("bold #000000", "#ffffff", 1) == "#ffffff"
+    assert ui.ramp(0) == ui.GRADIENT[0] and ui.ramp(1) == ui.GRADIENT[-1]
+    assert ui.ramp(-5) == ui.ramp(0) and ui.ramp(5) == ui.ramp(1)
+    assert ui.sparkline_text([0, 9]).plain == ui.sparkline([0, 9])
+
+
+def test_feed_has_fixed_height():
+    lg = _Logger()
+    assert ui.render_feed(lg, 12, 80).plain.count("\n") == 11
+    lg.feed.clear()
+    assert ui.render_feed(lg, 12, 80).plain.count("\n") == 11
+
+
+def test_summary_stacks_columns_on_narrow_terminals(monkeypatch):
+    cfg = make_config("N", None)
+    monkeypatch.setattr(type(ui.console), "width", property(lambda self: 60))
+    out = _render(ui.summary_panel(cfg, _Logger(), 5))
+    top = next(line for line in out.splitlines() if "TOP HOSTS" in line)
+    assert "BREAKDOWN" not in top and "BREAKDOWN" in out

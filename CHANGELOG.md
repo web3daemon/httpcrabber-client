@@ -11,6 +11,17 @@ uses [Semantic Versioning](https://semver.org/).
 - `HTTPCRABBER_BINARY_BODIES=1` stores binary bodies (≤ `MAX_BODY_SIZE`) as base64
   in the dump instead of a `[binary, N bytes]` placeholder. Off by default.
 
+### Changed
+- Redesigned terminal UI: diagonal-gradient banner with shaded depth, timestamped `OK` /
+  `FAIL` / `INFO` status badges, spinners with elapsed time, card-style session brief.
+- Live panel: two-column header, feed with a column header, bright host / muted path,
+  a marker on the newest row and a fixed height (no jumping); blinking `● REC`,
+  gradient sparkline, hint moved into the frame.
+- Session summary: stat tiles, gradient host bars with share %, colored method and status
+  breakdown with a stacked status bar; columns stack on narrow terminals.
+- READMEs show real SVG renders of the UI (`scripts/gen_screenshots.py`, EN and RU) and a
+  Mermaid architecture diagram; added a 1280×640 social preview image.
+
 ## [1.0.0] — 2026-07-19
 
 First public release.

@@ -19,29 +19,9 @@
 
 ---
 
-```
-┌──────────────────────────── 🦀 SESSION LIVE ─────────────────────────────┐
-│                                                                          │
-│    Session  TARGET RECON                                                 │
-│   Upstream  socks5://user:****@1.2.3.4:1080                              │
-│  mitmproxy  127.0.0.1:8080                                               │
-│     Folder  LOGS/target_recon                                            │
-│                                                                          │
-│   ⠸  LIVE INTERCEPT                                                      │
-│   14:22:07  GET    200  https://cdn.target.com/static/js/main.a3f1c8…    │
-│   14:22:07  POST   403  https://api.target.com/v2/auth/challenge         │
-│   14:22:08  GET    304  https://target.com/assets/app.css                │
-│   14:22:08  POST   200  https://api.target.com/v2/graphql                │
-│   14:22:09  WS     →    wss://realtime.target.com/socket                 │
-│   14:22:10  GET    500  https://api.target.com/v2/telemetry/collect      │
-│   14:22:11  ERR    ···  https://blocked.tracker.io/beacon                │
-│   14:22:12  DELETE 204  https://api.target.com/v2/session                │
-│                                                                          │
-│   ● REQ 1478 ● RESP 1443 ● WS 12 ● JS 38 ● ERR 2   ▂▆█▄▂▁▁▄  03:41       │
-│                                                                          │
-│        Close Chrome or press Ctrl+C to finish and save the session.      │
-└──────────────────────────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="assets/screen-live.svg" alt="httpcrabber 实时拦截面板" width="100%">
+</p>
 
 <details>
 <summary><b>目录</b></summary>
@@ -74,7 +54,7 @@
 
 | | |
 |---|---|
-| 💚 **动画黑客风 CLI** | 矩阵字符雨、渐变故障横幅、打字机效果、真实的 `[ OK ]` 状态行、真实等待时的加载动画 |
+| 💚 **动画黑客风 CLI** | 矩阵字符雨、渐变故障横幅、打字机效果、彩色状态徽章、真实等待时的加载动画 |
 | 📡 **实时拦截信息流** | 实时显示请求，方法与状态码彩色高亮，计数器，流量迷你折线图 |
 | 📊 **会话分析** | 结束时显示热门主机、方法与状态分布、时长与转储大小 |
 | 🧅 **支持任意上游代理** | `socks5` / `socks5h` / `socks4` / `http` / `https`，带或不带认证，支持所有常见写法 |
@@ -129,26 +109,17 @@ httpcrabber
 2. **上游代理** —— 任意格式粘贴即可，或直接按 <kbd>Enter</kbd> 使用直连
 3. **会话名称** —— 例如 `TARGET RECON`
 
+<p align="center">
+  <img src="assets/screen-start.svg" alt="httpcrabber 启动界面：横幅、会话简报、状态行" width="100%">
+</p>
+
 随后会显示会话简报，在需要时安装 CA 证书，通过代理启动 Chrome，并把所有内容写入会话
 文件夹。正常浏览即可 —— 每一个请求、响应、WebSocket 帧和脚本都会被捕获。关闭 Chrome
 （或按 <kbd>Ctrl+C</kbd>）结束会话，你将看到分析面板与文件夹路径。
 
-```
-┌─────────────────────────────── ✓ SESSION FINISHED ────────────────────────────────┐
-│                                                                                   │
-│    Requests  1478        TOP HOSTS                                                │
-│   Responses  1443        api.target.com       ██████████████ 612                  │
-│   WebSocket  12          cdn.target.com       █████████ 380                       │
-│  JS scripts  38          static.target.com    █████ 214                           │
-│      Errors  2           tracker.io           ██ 96                               │
-│    Duration  03:41                                                                │
-│                          Methods  GET 1201 · POST 260 · OPTIONS 17                │
-│                          Status   2xx 1380 · 3xx 12 · 4xx 51                      │
-│                                                                                   │
-│      Folder  LOGS/target_recon                                                    │
-│        Dump  2.31 MB                                                              │
-└───────────────────────────────────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="assets/screen-summary.svg" alt="httpcrabber 会话汇总" width="100%">
+</p>
 
 ## 命令行
 
@@ -222,9 +193,20 @@ LOGS/
 
 ## 工作原理
 
-```
-  Chrome ──▶ mitmproxy ──▶ pproxy 桥接 ──▶ 你的上游代理 ──▶ 目标站点
-             (捕获流量)     (协议适配)
+```mermaid
+flowchart LR
+    B["🌐 Chrome"] -->|HTTPS| M["🦀 mitmproxy<br/><sub>拦截</sub>"]
+    M --> P["🔌 pproxy 桥接<br/><sub>协议适配</sub>"]
+    P -->|"socks5 · http"| U["🧅 你的上游代理"]
+    U --> T["🎯 目标站点"]
+    M -.-> F[("📁 LOGS/会话<br/><sub>JSONL + JS</sub>")]
+
+    classDef hop fill:#0b0f0c,stroke:#39ff14,color:#d6ded6,stroke-width:1.5px
+    classDef core fill:#0b0f0c,stroke:#ff2fd0,color:#ffffff,stroke-width:2px
+    classDef store fill:#0b0f0c,stroke:#00e5ff,color:#d6ded6,stroke-width:1.5px
+    class B,P,U,T hop
+    class M core
+    class F store
 ```
 
 mitmproxy 原生仅支持 `http`/`https` 上游代理。为了让 **SOCKS5** 也能透明工作，httpcrabber

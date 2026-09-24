@@ -7,7 +7,7 @@
 Снимает трафик на уровне сети и сохраняет всё на диск — без расширений и внедрённого кода, страница работает как есть.
 
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
-[![Релиз v1.2.0](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
+[![Релиз v1.2.1](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
 [![Python 3.11+](assets/badge-python.svg)](https://www.python.org/)
 [![Платформы Windows · macOS · Linux](assets/badge-platform.svg)](#требования)
 [![Лицензия GPL-3.0](assets/badge-license.svg)](LICENSE)
@@ -26,7 +26,7 @@
 ## ⚡ Старт за 30 секунд
 
 ```bash
-pip install httpcrabber
+pipx install httpcrabber          # или: pip install httpcrabber внутри venv
 httpcrabber
 ```
 
@@ -79,9 +79,14 @@ DevTools хороши, чтобы быстро посмотреть, но как
 ## Установка
 
 ```bash
-pip install httpcrabber          # или: pipx install httpcrabber
+pipx install httpcrabber
 httpcrabber --version
 ```
+
+Почему `pipx`: mitmproxy жёстко фиксирует версии своих зависимостей (`cryptography`, `h2`, …),
+и установка в глобальный Python может откатить пакеты, на которые рассчитывают другие
+инструменты. `pipx` держит httpcrabber в отдельном окружении; `pip install httpcrabber`
+внутри venv тоже подходит.
 
 Или из клона, для разработки:
 

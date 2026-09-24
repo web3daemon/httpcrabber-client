@@ -7,7 +7,7 @@
 Captura en la red y guarda todo en disco: sin extensiones ni código inyectado, la página funciona tal cual.
 
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
-[![Versión v1.2.0](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
+[![Versión v1.2.1](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
 [![Python 3.11+](assets/badge-python.svg)](https://www.python.org/)
 [![Plataformas Windows · macOS · Linux](assets/badge-platform.svg)](#requisitos)
 [![Licencia GPL-3.0](assets/badge-license.svg)](LICENSE)
@@ -26,7 +26,7 @@ Captura en la red y guarda todo en disco: sin extensiones ni código inyectado, 
 ## ⚡ En marcha en 30 segundos
 
 ```bash
-pip install httpcrabber
+pipx install httpcrabber          # o: pip install httpcrabber dentro de un venv
 httpcrabber
 ```
 
@@ -80,9 +80,14 @@ Define `HTTPCRABBER_BROWSER=/ruta/a/chrome` para forzar el navegador en cualquie
 ## Instalación
 
 ```bash
-pip install httpcrabber          # o: pipx install httpcrabber
+pipx install httpcrabber
 httpcrabber --version
 ```
+
+Por qué `pipx`: mitmproxy fija versiones exactas de sus dependencias (`cryptography`, `h2`, …),
+así que instalarlo en el Python global puede degradar paquetes de los que dependen otras
+herramientas. `pipx` mantiene httpcrabber en su propio entorno; `pip install httpcrabber`
+dentro de un venv también sirve.
 
 O desde un clon, para desarrollo:
 

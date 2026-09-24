@@ -6,6 +6,18 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.1] — 2026-09-24
+
+### Fixed
+- `httpcrabber` crashed on start on Python 3.11 when a recent `bcrypt` (5.x) was installed:
+  mitmproxy 11.0 — the last release for Python 3.11 — imports `passlib`, which is not
+  compatible with bcrypt 5 (`ValueError: password cannot be longer than 72 bytes`). The old
+  bcrypt behaviour is restored for passlib inside httpcrabber's own process only.
+
+### Changed
+- The READMEs recommend `pipx install httpcrabber`: mitmproxy pins exact dependency
+  versions and can downgrade packages in a global Python.
+
 ## [1.2.0] — 2026-09-24
 
 Data you can trust, plus source maps. The dump format stays backward compatible: every
@@ -102,7 +114,8 @@ First public release.
 - Free-port detection uses `bind` instead of `connect`, which could hang on filtered ports.
 - Hard `Ctrl+C` on Windows no longer leaves Chrome or the pproxy bridge running.
 
-[Unreleased]: https://github.com/web3daemon/httpcrabber-client/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/web3daemon/httpcrabber-client/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/web3daemon/httpcrabber-client/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/web3daemon/httpcrabber-client/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/web3daemon/httpcrabber-client/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/web3daemon/httpcrabber-client/releases/tag/v1.0.0

@@ -38,7 +38,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "ruff>=0.5"]
+dev = ["pytest>=8", "ruff>=0.5", "bcrypt>=5"]  # bcrypt: регрессия passlib на Python 3.11, см. _compat.py
 
 [project.urls]
 Homepage = "https://github.com/web3daemon/httpcrabber-client"

@@ -7,7 +7,7 @@
 在网络层捕获流量并全部保存到磁盘 —— 无需扩展、不注入代码，页面按原样运行。
 
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
-[![版本 v1.2.0](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
+[![版本 v1.2.1](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
 [![Python 3.11+](assets/badge-python.svg)](https://www.python.org/)
 [![平台 Windows · macOS · Linux](assets/badge-platform.svg)](#环境要求)
 [![许可证 GPL-3.0](assets/badge-license.svg)](LICENSE)
@@ -26,7 +26,7 @@
 ## ⚡ 30 秒上手
 
 ```bash
-pip install httpcrabber
+pipx install httpcrabber          # 或：在 venv 中 pip install httpcrabber
 httpcrabber
 ```
 
@@ -76,9 +76,13 @@ httpcrabber
 ## 安装
 
 ```bash
-pip install httpcrabber          # 或: pipx install httpcrabber
+pipx install httpcrabber
 httpcrabber --version
 ```
+
+为什么用 `pipx`：mitmproxy 会锁定其依赖的精确版本（`cryptography`、`h2` 等），
+装进全局 Python 可能把其他工具依赖的包降级。`pipx` 会把 httpcrabber 放在独立环境中；
+在 venv 里 `pip install httpcrabber` 也同样可行。
 
 或从克隆的仓库安装，便于开发：
 

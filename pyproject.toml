@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "httpcrabber"
 dynamic = ["version"]
-description = "Network-level HTTP/HTTPS/WebSocket interceptor for reverse-engineering web APIs — invisible to in-page JavaScript protections."
+description = "Network-level HTTP/HTTPS/WebSocket interceptor for reverse-engineering and debugging web APIs — records whole sessions to disk."
 readme = "README.md"
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]

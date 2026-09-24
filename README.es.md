@@ -2,9 +2,9 @@
 
 <img src="assets/logo.svg" alt="httpcrabber" width="880">
 
-### Interceptor de tráfico a nivel de red para hacer ingeniería inversa de APIs web
+### Interceptor de tráfico a nivel de red para ingeniería inversa y depuración de APIs web
 
-Invisible para las protecciones JavaScript de la página, porque nunca entra en ella.
+Captura en la red y guarda todo en disco: sin extensiones ni código inyectado, la página funciona tal cual.
 
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
 [![Versión v1.1.0](assets/badge-version.svg)](https://github.com/web3daemon/httpcrabber-client/releases/latest)
@@ -34,13 +34,17 @@ Responde tres preguntas, navega con normalidad y cierra Chrome: cada petición, 
 
 ## Por qué
 
-Las DevTools del navegador se pueden detectar. El JavaScript antibot (Kasada, Cloudflare,
-Vercel BotID) comprueba de forma rutinaria si hay un depurador conectado, si el panel de
-desarrollador está abierto o si la pila de red ha sido manipulada desde dentro de la página.
+Las DevTools son geniales para echar un vistazo rápido, pero como grabadora se quedan cortas:
+el registro vive mientras la pestaña está abierta, los cuerpos grandes y las tramas WebSocket
+son difíciles de exportar, los scripts están repartidos entre peticiones y un HAR es una única
+instantánea enorme de una pestaña.
 
-**httpcrabber opera por debajo de todo eso.** Es un proxy HTTPS basado en
-[mitmproxy](https://mitmproxy.org/): el tráfico se captura en el cable, no en la página.
-Desde el punto de vista del JavaScript, ahí no hay nada.
+**httpcrabber graba toda la sesión en disco.** Es un proxy HTTPS basado en
+[mitmproxy](https://mitmproxy.org/): cada petición, respuesta, trama WebSocket y script se
+captura en la red y se escribe en la carpeta de la sesión como JSONL línea a línea, listo para
+`grep`, `jq`, diffs y scripts. No se instala nada en el navegador ni se inyecta nada en la
+página, así que el sitio funciona exactamente igual que en una visita normal, y sirve cualquier
+navegador o dispositivo que pueda usar un proxy.
 
 ## Características
 

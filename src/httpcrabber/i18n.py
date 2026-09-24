@@ -4,7 +4,7 @@ from httpcrabber.config import settings
 
 STRINGS: dict[str, dict[str, str]] = {
     "ru": {
-        "tagline": "невидимый перехват трафика · mitmproxy + upstream-прокси",
+        "tagline": "перехват трафика на уровне сети · mitmproxy + upstream-прокси",
         "ask_lang": "Выбери язык / Select language",
         "ask_proxy": "Upstream-прокси (Enter — без прокси, прямое соединение):",
         "proxy_hint": "host:port · host:port:user:pass · user:pass@host:port · socks5://…",
@@ -65,7 +65,7 @@ STRINGS: dict[str, dict[str, str]] = {
         "not_tty": "Нет интерактивного терминала — передай --lang, --session и --proxy или --direct.",
     },
     "en": {
-        "tagline": "invisible traffic capture · mitmproxy + upstream proxy",
+        "tagline": "network-level traffic capture · mitmproxy + upstream proxy",
         "ask_lang": "Select language / Выбери язык",
         "ask_proxy": "Upstream proxy (Enter — no proxy, direct connection):",
         "proxy_hint": "host:port · host:port:user:pass · user:pass@host:port · socks5://…",

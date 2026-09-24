@@ -2,9 +2,9 @@
 
 <img src="assets/logo.svg" alt="httpcrabber" width="880">
 
-### 用于逆向分析 Web API 的网络层流量拦截工具
+### 用于逆向分析与调试 Web API 的网络层流量拦截工具
 
-对页面内的 JavaScript 防护完全隐形 —— 因为它从不进入页面。
+在网络层捕获流量并全部保存到磁盘 —— 无需扩展、不注入代码，页面按原样运行。
 
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
 [![版本 v1.1.0](assets/badge-version.svg)](https://github.com/web3daemon/httpcrabber-client/releases/latest)
@@ -34,11 +34,13 @@ httpcrabber
 
 ## 为什么需要它
 
-浏览器开发者工具是可以被检测到的。反爬虫 JavaScript（Kasada、Cloudflare、Vercel BotID）
-会例行检查是否附加了调试器、开发者面板是否打开，以及网络栈是否在页面内部被篡改过。
+开发者工具适合快速查看，但不适合做记录：日志只在标签页打开期间存在，大响应体和 WebSocket
+帧难以导出，脚本分散在各个请求里，而 HAR 只是某个标签页的一次巨大快照。
 
-**httpcrabber 运行在这一切之下。** 它是基于 [mitmproxy](https://mitmproxy.org/) 的 HTTPS
-代理：流量是在链路上被捕获的，而不是在页面里。从 JavaScript 的视角看，那里什么都没有。
+**httpcrabber 把整个会话记录到磁盘。** 它是基于 [mitmproxy](https://mitmproxy.org/) 的 HTTPS
+代理：每个请求、响应、WebSocket 帧和脚本都在网络层被捕获，并以逐行 JSONL 写入会话文件夹 ——
+可直接用于 `grep`、`jq`、diff 和脚本。浏览器中无需安装任何东西，页面中也不注入任何代码，
+因此网站的运行方式与正常访问完全一致；任何能使用代理的浏览器或设备都可以接入。
 
 ## 功能特性
 

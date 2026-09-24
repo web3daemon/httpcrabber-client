@@ -151,7 +151,7 @@ def logo() -> str:
   <g transform="translate({wx} {wy})" shape-rendering="crispEdges" filter="url(#glow)">{word}</g>
   <g font-family="{MONO}">
     <text x="{wx}" y="{wy + 9 * wpx + 34}" font-size="20" fill="#00e5ff">network-level traffic interceptor</text>
-    <text x="{wx}" y="{wy + 9 * wpx + 62}" font-size="14" fill="#6f7f6f">invisible to in-page JavaScript · built on mitmproxy</text>
+    <text x="{wx}" y="{wy + 9 * wpx + 62}" font-size="14" fill="#6f7f6f">records whole sessions to disk · built on mitmproxy</text>
   </g>
 </svg>
 """
@@ -200,8 +200,8 @@ def social() -> str:
   <g transform="translate({wx} {wy})" shape-rendering="crispEdges" filter="url(#glow)">{word}</g>
   <g font-family="{MONO}">
     <text x="{wx}" y="304" font-size="27" fill="#d6ded6">Network-level traffic interceptor</text>
-    <text x="{wx}" y="342" font-size="27" fill="#d6ded6">for reverse-engineering web APIs.</text>
-    <text x="{wx}" y="390" font-size="21" fill="#00e5ff">invisible to in-page JavaScript protections</text>
+    <text x="{wx}" y="342" font-size="27" fill="#d6ded6">for reverse-engineering &amp; debugging APIs.</text>
+    <text x="{wx}" y="390" font-size="21" fill="#00e5ff">records whole sessions to disk, page untouched</text>
     <g font-size="17">
       <rect x="560" y="428" width="620" height="112" rx="10" fill="#0f1511" stroke="#39ff14" stroke-opacity="0.25"/>
       {"".join(rows)}

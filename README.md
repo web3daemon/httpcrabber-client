@@ -2,9 +2,9 @@
 
 <img src="assets/logo.svg" alt="httpcrabber" width="880">
 
-### Network-level traffic interceptor for reverse-engineering web APIs
+### Network-level traffic interceptor for reverse-engineering and debugging web APIs
 
-Invisible to in-page JavaScript protections — because it never touches the page.
+Captures on the wire and saves everything to disk — no extensions, no injected code, the page runs untouched.
 
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
 [![Release v1.1.0](assets/badge-version.svg)](https://github.com/web3daemon/httpcrabber-client/releases/latest)
@@ -34,13 +34,16 @@ Answer three prompts, browse as usual, close Chrome — every request, response,
 
 ## Why
 
-Browser DevTools can be detected. Anti-bot JavaScript (Kasada, Cloudflare, Vercel BotID)
-routinely checks whether a debugger is attached, whether `devtools` is open, or whether
-the network stack has been tampered with from inside the page.
+DevTools is great for a quick look, but it is a poor recorder: the log lives only as long as
+the tab, large bodies and WebSocket frames are awkward to export, scripts are scattered across
+requests, and a HAR file is one huge snapshot of one tab.
 
-**httpcrabber sits below all of that.** It is an HTTPS proxy based on
-[mitmproxy](https://mitmproxy.org/): traffic is captured on the wire, not in the page.
-From the JavaScript's point of view, nothing is there.
+**httpcrabber records a whole session to disk.** It is an HTTPS proxy based on
+[mitmproxy](https://mitmproxy.org/): every request, response, WebSocket frame and script is
+captured on the wire and written to a per-session folder as line-by-line JSONL — ready for
+`grep`, `jq`, diffs and scripts. Nothing is installed into the browser or injected into the
+page, so the site runs exactly as it does on a normal visit, and any browser or device that
+can use a proxy works.
 
 ## Features
 

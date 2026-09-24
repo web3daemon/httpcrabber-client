@@ -6,6 +6,37 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.0] — 2026-09-24
+
+Data you can trust, plus source maps. The dump format stays backward compatible: every
+existing field is unchanged, new ones are only added.
+
+### Added
+- Every dump record carries `id` — the mitmproxy flow id shared by a request, its response,
+  its error and the WebSocket frames of one connection. Parallel requests to the same URL
+  can finally be matched.
+- Responses record `duration_ms` and `size`; requests record `size`.
+- `headers_raw`: headers as a list of pairs next to the old `headers` dict, so repeated
+  headers survive.
+- Source maps: every map the proxy sees (a `.map` response or an inline `data:` map) is
+  unpacked into `js/<host>/sources/` — the original project files. `--sourcemaps` also
+  fetches the maps that scripts reference, through the session's own proxy chain; those
+  requests are marked `fetched_by: "sourcemap"` in the dump. The summary shows how many
+  source files were recovered.
+- `--include HOST` / `--exclude HOST` (glob, repeatable) limit which hosts are recorded.
+- `httpcrabber redact SESSION` writes a copy of a session (folder or `.jsonl`) with auth
+  headers, cookies and secret-looking URL, form and JSON fields masked as `[REDACTED]`.
+  Recording itself is never masked — real tokens are what you reverse-engineer with.
+- Releases are published to PyPI (Trusted Publishing) in addition to GitHub.
+
+### Fixed
+- Repeated headers were merged into one string by `dict(headers)`: several `Set-Cookie`
+  became `a=1; Expires=Wed, 21 Oct 2026 07:28:00 GMT, b=2`, which cannot be split back
+  because `Expires` itself contains a comma. `headers_raw` keeps them apart.
+- Binary WebSocket frames (protobuf, msgpack, …) were decoded as UTF-8 with replacement
+  characters and stored as garbage. They are now stored like binary bodies (placeholder, or
+  base64 with `HTTPCRABBER_BINARY_BODIES=1`), and each frame records `type: text|binary`.
+
 ## [1.1.0] — 2026-09-23
 
 A visual release: the whole terminal UI and the repository got a redesign. Capture logic
@@ -71,6 +102,7 @@ First public release.
 - Free-port detection uses `bind` instead of `connect`, which could hang on filtered ports.
 - Hard `Ctrl+C` on Windows no longer leaves Chrome or the pproxy bridge running.
 
-[Unreleased]: https://github.com/web3daemon/httpcrabber-client/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/web3daemon/httpcrabber-client/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/web3daemon/httpcrabber-client/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/web3daemon/httpcrabber-client/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/web3daemon/httpcrabber-client/releases/tag/v1.0.0

@@ -6,16 +6,16 @@ import re
 import subprocess
 import time
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from mitmproxy import options
 from mitmproxy.tools.dump import DumpMaster
 from rich.live import Live
 
-from httpcrabber import browser, ca, procs, ui
+from httpcrabber import browser, ca, procs, sourcemaps, ui
 from httpcrabber.bridge import start_bridge
-from httpcrabber.capture import NetworkLogger
+from httpcrabber.capture import NetworkLogger, Scope
 from httpcrabber.config import DEFAULT_BRIDGE_PORT, DEFAULT_PROXY_PORT, WARN, console, settings
 from httpcrabber.i18n import t
 from httpcrabber.proxy import Proxy
@@ -31,6 +31,9 @@ class SessionConfig:
     proxy_port: int
     bridge_port: int
     launch_browser: bool = True
+    include: list[str] = field(default_factory=list)   # glob-шаблоны хостов
+    exclude: list[str] = field(default_factory=list)
+    sourcemaps: bool = False                           # докачивать .map самим
 
 
 def sanitize_session(name: str) -> str:
@@ -51,7 +54,8 @@ def unique_session_dir(base: Path, slug: str) -> Path:
 
 
 def make_config(name: str, proxy: Proxy | None, *, launch_browser: bool = True,
-                port: int | None = None) -> SessionConfig:
+                port: int | None = None, include=(), exclude=(),
+                fetch_sourcemaps: bool = False) -> SessionConfig:
     slug = sanitize_session(name)
     session_dir = unique_session_dir(settings.log_dir, slug)
     proxy_port = procs.free_port(port or DEFAULT_PROXY_PORT)
@@ -65,6 +69,9 @@ def make_config(name: str, proxy: Proxy | None, *, launch_browser: bool = True,
         bridge_port=procs.free_port(DEFAULT_BRIDGE_PORT if proxy_port != DEFAULT_BRIDGE_PORT
                                     else DEFAULT_BRIDGE_PORT + 1),
         launch_browser=launch_browser,
+        include=list(include),
+        exclude=list(exclude),
+        sourcemaps=fetch_sourcemaps,
     )
 
 
@@ -98,7 +105,9 @@ async def run_session(cfg: SessionConfig) -> NetworkLogger | None:
     # 2) mitmproxy
     opts = options.Options(listen_host="127.0.0.1", listen_port=cfg.proxy_port, mode=mode)
     master = DumpMaster(opts, with_termlog=False, with_dumper=False)
-    logger = NetworkLogger(cfg.log_path, cfg.js_dir)
+    fetcher = sourcemaps.Fetcher(cfg.proxy_port) if cfg.sourcemaps else None
+    logger = NetworkLogger(cfg.log_path, cfg.js_dir, scope=Scope(cfg.include, cfg.exclude),
+                           fetcher=fetcher)
     master.addons.add(logger)
     ui.step(t("mitm_start", port=cfg.proxy_port))
 

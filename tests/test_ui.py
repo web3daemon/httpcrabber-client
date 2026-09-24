@@ -164,3 +164,11 @@ def test_banner_shows_crab_only_when_it_fits(monkeypatch):
     assert "▀" not in rendered(100)    # арт влезает, краб — нет
     assert "H T T P" in rendered(60)   # узкий: краб над компактным заголовком
     assert "▀" in rendered(60)
+
+
+def test_summary_mentions_unpacked_sources():
+    cfg = make_config("SRC", None)
+    lg = _Logger()
+    lg.js = type("JS", (), {"sources": 412})()
+    assert "412 files from source maps" in _render(ui.summary_panel(cfg, lg, 5))
+    assert "source maps" not in _render(ui.summary_panel(cfg, _Logger(), 5))

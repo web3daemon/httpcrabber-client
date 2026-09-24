@@ -1,23 +1,23 @@
 <div align="center">
 
-<img src="assets/logo.svg" alt="httpcrabber" width="880">
+<img src="https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/logo.svg" alt="httpcrabber" width="880">
 
 ### Network-level traffic interceptor for reverse-engineering and debugging web APIs
 
 Captures on the wire and saves everything to disk — no extensions, no injected code, the page runs untouched.
 
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
-[![Release v1.1.0](assets/badge-version.svg)](https://github.com/web3daemon/httpcrabber-client/releases/latest)
-[![Python 3.11+](assets/badge-python.svg)](https://www.python.org/)
-[![Platform Windows · macOS · Linux](assets/badge-platform.svg)](#requirements)
-[![License GPL-3.0](assets/badge-license.svg)](LICENSE)
-[![Built with mitmproxy](assets/badge-mitmproxy.svg)](https://mitmproxy.org/)
+[![Release v1.2.0](https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/badge-version.svg)](https://github.com/web3daemon/httpcrabber-client/releases/latest)
+[![Python 3.11+](https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/badge-python.svg)](https://www.python.org/)
+[![Platform Windows · macOS · Linux](https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/badge-platform.svg)](#requirements)
+[![License GPL-3.0](https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/badge-license.svg)](https://github.com/web3daemon/httpcrabber-client/blob/main/LICENSE)
+[![Built with mitmproxy](https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/badge-mitmproxy.svg)](https://mitmproxy.org/)
 
-**English** · [Русский](README.ru.md) · [Español](README.es.md) · [中文](README.zh.md)
+**English** · [Русский](https://github.com/web3daemon/httpcrabber-client/blob/main/README.ru.md) · [Español](https://github.com/web3daemon/httpcrabber-client/blob/main/README.es.md) · [中文](https://github.com/web3daemon/httpcrabber-client/blob/main/README.zh.md)
 
 <br>
 
-<img src="assets/demo.svg" alt="httpcrabber demo: startup, live intercept, session summary" width="100%">
+<img src="https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/demo.svg" alt="httpcrabber demo: startup, live intercept, session summary" width="100%">
 
 [**Features**](#features) · [**Install**](#install) · [**Quick start**](#quick-start) · [**Command line**](#command-line) · [**Session output**](#session-output) · [**How it works**](#how-it-works) · [**Security**](#-security)
 
@@ -55,6 +55,8 @@ can use a proxy works.
 | 🧅 **Any upstream proxy** | `socks5` / `socks5h` / `socks4` / `http` / `https`, with or without auth, every common notation |
 | 🗂 **One folder per session** | Network dump + every script together — archive or share a session as a unit |
 | 📜 **Full JavaScript capture** | External bundles and inline `<script>` blocks, complete and deduplicated by SHA-256 |
+| 🗺 **Source maps → original sources** | Maps are unpacked into the project's original file tree; `--sourcemaps` fetches the ones scripts reference |
+| 🕶 **Safe sharing** | `httpcrabber redact` makes a copy with tokens, cookies and auth headers masked |
 | 🌐 **Chrome starts itself** | Launched through the proxy with a dedicated profile — or bring your own browser with `--no-browser` |
 | 🔐 **Automatic CA setup** | Certificate checked and installed on first run, on Windows, macOS and Linux |
 | ⌨️ **Scriptable** | Every prompt has a flag; pass them all and nothing is asked |
@@ -105,7 +107,7 @@ The tool asks for three things and handles the rest:
 3. **Session name** — e.g. `TARGET RECON`
 
 <p align="center">
-  <img src="assets/screen-start.svg" alt="httpcrabber startup: banner, session brief, status lines" width="100%">
+  <img src="https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/screen-start.svg" alt="httpcrabber startup: banner, session brief, status lines" width="100%">
 </p>
 
 It shows a session brief, installs the CA certificate if needed, starts Chrome through the
@@ -114,7 +116,7 @@ response, WebSocket frame and script is captured. Close Chrome (or press <kbd>Ct
 to finish; you get an analytics panel and the folder path.
 
 <p align="center">
-  <img src="assets/screen-summary.svg" alt="httpcrabber session summary" width="100%">
+  <img src="https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/screen-summary.svg" alt="httpcrabber session summary" width="100%">
 </p>
 
 ## Command line
@@ -125,6 +127,7 @@ Every prompt has a flag. Pass them all and httpcrabber asks nothing — handy fo
 httpcrabber --lang en --session "target recon" --proxy socks5://user:pass@1.2.3.4:1080
 httpcrabber -l en -s quick --direct --no-browser          # use your own browser / device
 httpcrabber --no-anim                                      # plain output, no animations
+httpcrabber -s api --include '*.target.com' --sourcemaps  # only the target + original sources
 ```
 
 | Flag | Meaning |
@@ -135,6 +138,9 @@ httpcrabber --no-anim                                      # plain output, no an
 | `--direct` | No upstream proxy |
 | `--port PORT` | mitmproxy listen port (default `8080`, next free one if busy) |
 | `-o, --output DIR` | Where sessions go (default `./LOGS`) |
+| `--include HOST` | Record only matching hosts — glob, repeatable (`*.target.com`) |
+| `--exclude HOST` | Never record matching hosts — glob, repeatable |
+| `--sourcemaps` | Fetch source maps referenced by scripts and unpack the original sources |
 | `--no-browser` | Don't launch Chrome — point any browser or device at `127.0.0.1:<port>` |
 | `--no-anim` | Disable animations |
 | `-V, --version` | Print version |
@@ -165,7 +171,9 @@ LOGS/
     └── js/
         ├── index.json                         # manifest: url, file, sha256, size, hits
         ├── cdn.target.com/
-        │   └── main.a3f1c8d4.js               # external scripts
+        │   ├── main.a3f1c8d4.js               # external scripts
+        │   ├── maps/main.js.9c1d2e3f.map      # source maps
+        │   └── sources/app/src/…              # original sources unpacked from maps
         └── target.com/
             └── inline/inline_0001.e5f6a7b8.js # inline <script> blocks
 ```
@@ -178,6 +186,12 @@ One JSON object per line, with an `event` field:
 `request` · `response` · `ws_open` · `ws_msg` · `ws_close` · `error`.
 Each record is flushed to disk immediately, so a crash or a hard kill loses nothing.
 
+Every record carries an `id`: a request, its response, its error and the WebSocket frames of
+one connection share it, even when the same URL is fetched in parallel. Responses add
+`duration_ms` and `size`. Headers are written twice — `headers` (a dict, as before) and
+`headers_raw` (a list of pairs that keeps repeated headers such as several `Set-Cookie`).
+WebSocket frames have a `type`, `text` or `binary`; binary frames are stored like binary bodies.
+
 ### Captured JavaScript
 
 - **Scripts are stored complete.** Bodies inside the `.jsonl` are truncated at 200 KB,
@@ -188,6 +202,15 @@ Each record is flushed to disk immediately, so a crash or a hard kill loses noth
   their own request), as are `application/ld+json` and `text/template` — those are not code.
 - Filenames carry a short content hash, so different builds of the same `app.js` never
   overwrite each other.
+
+### Source maps
+
+Browsers download source maps only while DevTools is open, so normally they never cross
+the wire. httpcrabber unpacks every map it does see — inline `data:` maps and any `.map`
+response — into `js/<host>/sources/`. With `--sourcemaps` it also requests the maps that
+scripts reference, through its own proxy and your upstream, so they land in the dump too,
+marked `fetched_by: "sourcemap"`. Many production sites don't publish maps; when one does,
+you get the original project tree instead of a minified bundle.
 
 ## How it works
 
@@ -228,10 +251,13 @@ src/httpcrabber/
 `Cookie`, `Set-Cookie`, `Authorization` headers, API keys and tokens for every site you
 visited during the session.
 
-- `LOGS/` and `*.jsonl` are excluded by [`.gitignore`](.gitignore) — **keep it that way**.
+- `LOGS/` and `*.jsonl` are excluded by [`.gitignore`](https://github.com/web3daemon/httpcrabber-client/blob/main/.gitignore) — **keep it that way**.
+- **To share a session, make a masked copy:** `httpcrabber redact LOGS/target_recon` →
+  `LOGS/target_recon_redacted/`. Auth headers, cookies and tokens in URLs, forms and JSON become
+  `[REDACTED]`; scripts are copied as is, the original session stays untouched.
 - Never commit, upload or share a session dump before reviewing it.
 - Treat a session folder as if it were your password manager export. Because effectively, it is.
-- The tool installs a locally generated root CA. [SECURITY.md](SECURITY.md) explains how to
+- The tool installs a locally generated root CA. [SECURITY.md](https://github.com/web3daemon/httpcrabber-client/blob/main/SECURITY.md) explains how to
   remove it when you are done.
 
 ## Responsible use
@@ -243,8 +269,8 @@ encounter. Do not use it to access systems without permission.
 
 ## Contributing
 
-Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for setup,
-conventions and how to add a language. Security reports go through [SECURITY.md](SECURITY.md).
+Issues and pull requests are welcome — see [CONTRIBUTING.md](https://github.com/web3daemon/httpcrabber-client/blob/main/CONTRIBUTING.md) for setup,
+conventions and how to add a language. Security reports go through [SECURITY.md](https://github.com/web3daemon/httpcrabber-client/blob/main/SECURITY.md).
 
 ```bash
 ruff check src tests run.py && pytest
@@ -252,4 +278,4 @@ ruff check src tests run.py && pytest
 
 ## License
 
-[GNU General Public License v3.0](LICENSE) — see the license file for the full text.
+[GNU General Public License v3.0](https://github.com/web3daemon/httpcrabber-client/blob/main/LICENSE) — see the license file for the full text.

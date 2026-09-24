@@ -1,28 +1,57 @@
 name: Release
 
-# Публикация релиза на GitHub → собираем wheel и sdist и прикладываем к нему.
+# Публикация релиза на GitHub → собираем wheel и sdist, прикладываем к релизу
+# и публикуем на PyPI через Trusted Publishing (OIDC, без токенов в секретах).
 on:
   release:
     types: [published]
 
-permissions:
-  contents: write
-
 jobs:
-  dist:
-    name: build & attach dist
+  build:
+    name: build dist
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - run: pip install build
+      - run: pip install build twine
       - run: python -m build
+      - run: twine check --strict dist/*
       - name: Check the version matches the tag
-        run: |
-          ls dist/httpcrabber-"${GITHUB_REF_NAME#v}"-py3-none-any.whl
-      - name: Attach to the release
-        env:
+        run: ls dist/httpcrabber-"${GITHUB_REF_NAME#v}"-py3-none-any.whl
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  attach:
+    name: attach to release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$GITHUB_REF_NAME" dist/* --clobber
+        run: gh release upload "$GITHUB_REF_NAME" dist/* --clobber --repo "$GITHUB_REPOSITORY"
+
+  pypi:
+    name: publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/httpcrabber/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

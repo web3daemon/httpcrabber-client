@@ -27,11 +27,17 @@ Q_STYLE = QStyle([
 QMARK = "◆"
 
 
+COMMANDS_HELP = """commands:
+  httpcrabber redact SESSION   copy of a session with secrets masked, for sharing
+"""
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="httpcrabber",
         description="Network-level traffic interceptor for reverse-engineering web APIs.",
-        epilog=f"Docs: {REPO_URL}",
+        epilog=f"{COMMANDS_HELP}\nDocs: {REPO_URL}",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument("-l", "--lang", choices=LANGUAGES, help="interface language (skips the prompt)")
     p.add_argument("-s", "--session", metavar="NAME", help="session name (skips the prompt)")
@@ -42,6 +48,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-o", "--output", metavar="DIR", help="sessions folder (default ./LOGS)")
     p.add_argument("--no-browser", action="store_true",
                    help="do not launch Chrome — point your own browser at the proxy")
+    p.add_argument("--include", action="append", default=[], metavar="HOST",
+                   help="record only matching hosts, glob, repeatable (*.example.com)")
+    p.add_argument("--exclude", action="append", default=[], metavar="HOST",
+                   help="never record matching hosts, glob, repeatable")
+    p.add_argument("--sourcemaps", action="store_true",
+                   help="fetch source maps referenced by scripts and unpack original sources")
     p.add_argument("--no-anim", action="store_true", help="disable animations")
     p.add_argument("-V", "--version", action="version", version=f"%(prog)s {__version__}")
     return p
@@ -122,14 +134,38 @@ def configure(args: argparse.Namespace):
         if name is None:
             return None
 
-    cfg = make_config(name, proxy, launch_browser=not args.no_browser, port=args.port)
+    cfg = make_config(name, proxy, launch_browser=not args.no_browser, port=args.port,
+                      include=args.include, exclude=args.exclude,
+                      fetch_sourcemaps=args.sourcemaps)
     console.print()
     console.print(ui.brief_panel(cfg))
     console.print()
     return cfg
 
 
+def redact_main(argv: list[str]) -> int:
+    from httpcrabber.redact import redact_session
+
+    p = argparse.ArgumentParser(
+        prog="httpcrabber redact",
+        description="Write a copy of a session (folder or .jsonl) with tokens, cookies, "
+                    "auth headers and secret-looking fields masked. The original is untouched.",
+    )
+    p.add_argument("session", type=Path, help="session folder (LOGS/<name>) or a .jsonl dump")
+    p.add_argument("-o", "--output", type=Path, help="where to write the copy")
+    args = p.parse_args(argv)
+    if not args.session.exists():
+        console.print(f"[{ERR}]{args.session}: not found[/]")
+        return 2
+    dst, lines, masked = redact_session(args.session, args.output)
+    ui.step(f"{lines} records, [{MAG}]{masked}[/] values masked → [{CYAN}]{dst}[/]")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    if argv[:1] == ["redact"]:
+        return redact_main(argv[1:])
     args = build_parser().parse_args(argv)
     settings.anim = not args.no_anim
     if args.output:

@@ -41,6 +41,10 @@ def test_make_config_layout():
 
 _HTML = b'<html><script>var T="tok";</script><script src="/app.js"></script></html>'
 _JS = b"function solve(){return 42;}"
+_MAPPED_JS = b"function a(){}\n//# sourceMappingURL=mapped.js.map\n"
+_MAP = json.dumps({"version": 3, "sources": ["webpack://app/src/solver.ts"],
+                   "sourcesContent": ["export const solve = () => 42;\n"],
+                   "mappings": "AAAA"}).encode()
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -48,7 +52,11 @@ class _Handler(BaseHTTPRequestHandler):
         pass
 
     def do_GET(self):  # noqa: N802
-        if self.path.startswith("/app.js"):
+        if self.path.startswith("/mapped.js.map"):
+            body, ct, code = _MAP, "application/json", 200
+        elif self.path.startswith("/mapped.js"):
+            body, ct, code = _MAPPED_JS, "application/javascript", 200
+        elif self.path.startswith("/app.js"):
             body, ct, code = _JS, "application/javascript", 200
         elif self.path.startswith("/403"):
             body, ct, code = b"no", "text/plain", 403
@@ -155,6 +163,37 @@ def test_run_session_through_bridge(origin, monkeypatch):
         upstream.terminate()
     assert logger is not None and logger.stats["response"] == 1
     assert logger.status_classes["2xx"] == 1
+
+
+@pytest.mark.integration
+def test_run_session_fetches_sourcemaps_and_filters_hosts(origin, monkeypatch):
+    """--sourcemaps: карту, на которую ссылается скрипт, докачиваем через свой mitmproxy."""
+    monkeypatch.setattr(ca, "is_installed", lambda: True)
+    monkeypatch.setattr(ca, "cert_path", lambda: None)
+    monkeypatch.setattr(browser, "launch", lambda port: _FakeBrowser(ttl=5))
+
+    cfg = make_config("MAPS", None, fetch_sourcemaps=True, exclude=["localhost"])
+
+    def traffic():
+        time.sleep(1.0)
+        opener = urllib.request.build_opener(
+            urllib.request.ProxyHandler({"http": f"http://127.0.0.1:{cfg.proxy_port}"}))
+        for url in (f"{origin}/mapped.js", origin.replace("127.0.0.1", "localhost") + "/"):
+            with contextlib.suppress(Exception):
+                opener.open(url, timeout=10).read()
+
+    threading.Thread(target=traffic, daemon=True).start()
+    logger = asyncio.run(run_session(cfg))
+
+    assert logger is not None and logger.js.sources == 1
+    solver = next(cfg.js_dir.glob("127.0.0.1_*/sources/app/src/solver.ts"))  # папка хоста с портом
+    assert solver.read_text(encoding="utf-8") == "export const solve = () => 42;\n"
+    events = [json.loads(line) for line in cfg.log_path.read_text(encoding="utf-8").splitlines()]
+    fetched = [e for e in events if e["event"] == "request" and e.get("fetched_by")]
+    assert [e["url"] for e in fetched] == [f"{origin}/mapped.js.map"]
+    assert all("localhost" not in e["url"] for e in events)          # --exclude сработал
+    ids = {e["id"] for e in events if e["event"] == "request"}
+    assert ids == {e["id"] for e in events if e["event"] == "response"}
 
 
 def test_run_session_bridge_failure_returns_none(monkeypatch):

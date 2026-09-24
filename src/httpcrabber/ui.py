@@ -390,6 +390,12 @@ def brief_panel(cfg) -> Panel:
          else f"[{WARN}]{t('browser_manual', port=cfg.proxy_port)}[/]"),
         (t("b_output"), f"[{MUTED}]{cfg.session_dir}[/]"),
     ]
+    include, exclude = getattr(cfg, "include", []), getattr(cfg, "exclude", [])
+    if include or exclude:
+        scope = " ".join([f"[{NEON}]+{p}[/]" for p in include] + [f"[{ERR}]-{p}[/]" for p in exclude])
+        rows.append((t("b_scope"), scope))
+    if getattr(cfg, "sourcemaps", False):
+        rows.append((t("b_sourcemaps"), f"[{CYAN}]{t('sourcemaps_on')}[/]"))
     for i, (label, value) in enumerate(rows):
         tbl.add_row(Text("◆", style=ramp(i / (len(rows) - 1))), label, value)
     return Panel(tbl, title=_title("◈", t("brief_title"), CYAN), title_align="left",
@@ -580,6 +586,9 @@ def summary_panel(cfg, logger, duration: float) -> RenderableType:
     footer.add_column(style=WHITE)
     footer.add_row(t("s_saved"), f"[{MAG}]{cfg.session_dir}[/]")
     footer.add_row(t("s_size"), f"[{WHITE}]{fmt_size(size)}[/]")
+    sources = getattr(getattr(logger, "js", None), "sources", 0)
+    if sources:
+        footer.add_row(t("s_sources"), f"[{CYAN}]{t('s_sources_val', n=sources)}[/]")
 
     body = Group(tiles, Rule(style=FAINT), grid, Rule(style=FAINT), footer)
     return Panel(body, title=_title("✓", t("summary"), NEON), title_align="left",

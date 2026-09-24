@@ -137,3 +137,79 @@ def test_feed_and_error(tmp_path):
     assert tail[0][1] == "GET" and tail[0][2] == 503
     assert tail[1][1] == "ERR"
     assert lg.stats["error"] == 1
+
+
+# ── v1.2: связь запрос↔ответ, заголовки без потерь, WS-бинарь, фильтр ────
+
+def _events(path):
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+
+
+def test_request_and_response_share_id_and_timing(tmp_path):
+    lg = NetworkLogger(tmp_path / "s.jsonl")
+    a, b = _flow(url="http://h/same"), _flow(url="http://h/same")
+    for f in (a, b):
+        lg.request(f)
+    lg.response(b)
+    lg.response(a)
+    lg.done()
+    ev = _events(tmp_path / "s.jsonl")
+    assert [e["id"] for e in ev] == [a.id, b.id, b.id, a.id]
+    resp = ev[2]
+    assert resp["size"] == len(b.response.raw_content) and resp["duration_ms"] >= 0
+
+
+def test_repeated_headers_kept_in_headers_raw(tmp_path):
+    f = _flow(url="http://h/login", ct="text/html", body=b"ok")
+    f.response.headers.add("Set-Cookie", "a=1; Expires=Wed, 21 Oct 2026 07:28:00 GMT")
+    f.response.headers.add("Set-Cookie", "b=2")
+    lg = NetworkLogger(tmp_path / "s.jsonl")
+    lg.response(f)
+    lg.done()
+    e = _events(tmp_path / "s.jsonl")[0]
+    cookies = [v for k, v in e["headers_raw"] if k.lower() == "set-cookie"]
+    assert cookies == ["a=1; Expires=Wed, 21 Oct 2026 07:28:00 GMT", "b=2"]
+    assert "Set-Cookie" in e["headers"]          # старое поле на месте
+
+
+def test_binary_websocket_frames_not_garbled(tmp_path):
+    from mitmproxy.websocket import WebSocketMessage
+
+    lg = NetworkLogger(tmp_path / "s.jsonl")
+    wf = tflow.twebsocketflow()
+    wf.websocket.messages.append(WebSocketMessage(2, True, b"\x08\x96\x01\xff"))
+    lg.websocket_message(wf)
+    wf.websocket.messages.append(WebSocketMessage(1, False, b"hello"))
+    lg.websocket_message(wf)
+    lg.done()
+    binary, text = _events(tmp_path / "s.jsonl")
+    assert binary["type"] == "binary" and binary["content"].startswith("[binary, 4 bytes")
+    assert text["type"] == "text" and text["content"] == "hello" and text["id"] == wf.id
+
+
+def test_scope_include_exclude(tmp_path):
+    from httpcrabber.capture import Scope
+
+    scope = Scope(include=["*.target.com", "target.com"], exclude=["ads.target.com"])
+    assert scope.allows("api.target.com") and scope.allows("TARGET.com")
+    assert not scope.allows("ads.target.com") and not scope.allows("google.com")
+    assert Scope().allows("anything") and not Scope()
+
+    lg = NetworkLogger(tmp_path / "s.jsonl", scope=Scope(exclude=["noise.io"]))
+    for url in ("http://api.target.com/x", "http://noise.io/pixel"):
+        f = _flow(url=url, ct="text/plain", body=b"x")
+        lg.request(f)
+        lg.response(f)
+    lg.done()
+    assert {e["url"] for e in _events(tmp_path / "s.jsonl")} == {"http://api.target.com/x"}
+    assert "noise.io" not in lg.hosts and lg.stats["request"] == 1
+
+
+def test_sourcemap_response_is_unpacked(tmp_path):
+    body = json.dumps({"version": 3, "sources": ["src/a.ts"], "sourcesContent": ["let a=1"],
+                       "mappings": "AAAA"}).encode()
+    lg = NetworkLogger(tmp_path / "s.jsonl", tmp_path / "js")
+    lg.response(_flow(url="http://cdn/app.js.map", ct="application/octet-stream", body=body))
+    lg.done()
+    assert (tmp_path / "js/cdn/sources/src/a.ts").read_text(encoding="utf-8") == "let a=1"
+    assert lg.js.sources == 1 and lg.stats["js"] == 0   # карта — не скрипт

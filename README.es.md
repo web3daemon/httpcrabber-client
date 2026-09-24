@@ -7,7 +7,7 @@
 Captura en la red y guarda todo en disco: sin extensiones ni código inyectado, la página funciona tal cual.
 
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
-[![Versión v1.1.0](assets/badge-version.svg)](https://github.com/web3daemon/httpcrabber-client/releases/latest)
+[![Versión v1.2.0](assets/badge-version.svg)](https://github.com/web3daemon/httpcrabber-client/releases/latest)
 [![Python 3.11+](assets/badge-python.svg)](https://www.python.org/)
 [![Plataformas Windows · macOS · Linux](assets/badge-platform.svg)](#requisitos)
 [![Licencia GPL-3.0](assets/badge-license.svg)](LICENSE)
@@ -56,6 +56,8 @@ navegador o dispositivo que pueda usar un proxy.
 | 🧅 **Cualquier proxy upstream** | `socks5` / `socks5h` / `socks4` / `http` / `https`, con o sin autenticación, en todas las notaciones habituales |
 | 🗂 **Una carpeta por sesión** | Volcado de red y scripts juntos: archiva o comparte una sesión como una unidad |
 | 📜 **Captura completa de JavaScript** | Bundles externos y bloques `<script>` en línea, completos y deduplicados por SHA-256 |
+| 🗺 **Source maps → fuentes originales** | Los mapas se extraen en el árbol original del proyecto; `--sourcemaps` descarga los que referencian los scripts |
+| 🕶 **Compartir con seguridad** | `httpcrabber redact` crea una copia con tokens, cookies y cabeceras de autorización enmascarados |
 | 🌐 **Chrome se inicia solo** | A través del proxy con un perfil dedicado, o usa tu propio navegador con `--no-browser` |
 | 🔐 **Configuración automática de CA** | El certificado se comprueba e instala en el primer arranque, en Windows, macOS y Linux |
 | ⌨️ **Automatizable** | Cada pregunta tiene su flag; pásalos todos y no se pregunta nada |
@@ -126,6 +128,7 @@ Cada pregunta tiene su flag. Pásalos todos y httpcrabber no pregunta nada: idea
 httpcrabber --lang en --session "target recon" --proxy socks5://user:pass@1.2.3.4:1080
 httpcrabber -l en -s quick --direct --no-browser          # tu propio navegador / dispositivo
 httpcrabber --no-anim                                      # salida sin animaciones
+httpcrabber -s api --include '*.target.com' --sourcemaps  # solo el objetivo + fuentes
 ```
 
 | Flag | Significado |
@@ -136,6 +139,9 @@ httpcrabber --no-anim                                      # salida sin animacio
 | `--direct` | Sin proxy upstream |
 | `--port PORT` | Puerto de escucha de mitmproxy (por defecto `8080`; si está ocupado, el siguiente libre) |
 | `-o, --output DIR` | Dónde guardar las sesiones (por defecto `./LOGS`) |
+| `--include HOST` | Grabar solo los hosts que coinciden — glob, repetible (`*.target.com`) |
+| `--exclude HOST` | No grabar nunca los hosts que coinciden — glob, repetible |
+| `--sourcemaps` | Descargar los source maps que referencian los scripts y extraer las fuentes originales |
 | `--no-browser` | No lanzar Chrome: apunta cualquier navegador o dispositivo a `127.0.0.1:<port>` |
 | `--no-anim` | Desactivar animaciones |
 | `-V, --version` | Mostrar versión |
@@ -166,7 +172,9 @@ LOGS/
     └── js/
         ├── index.json                         # manifiesto: url, archivo, sha256, tamaño, hits
         ├── cdn.target.com/
-        │   └── main.a3f1c8d4.js               # scripts externos
+        │   ├── main.a3f1c8d4.js               # scripts externos
+        │   ├── maps/main.js.9c1d2e3f.map      # source maps
+        │   └── sources/app/src/…              # fuentes originales extraídas de los mapas
         └── target.com/
             └── inline/inline_0001.e5f6a7b8.js # bloques <script> en línea
 ```
@@ -179,6 +187,12 @@ Un objeto JSON por línea, con un campo `event`:
 `request` · `response` · `ws_open` · `ws_msg` · `ws_close` · `error`.
 Cada registro se vuelca a disco de inmediato: un fallo o un cierre forzado no pierde nada.
 
+Cada registro lleva un `id`: una petición, su respuesta, su error y las tramas WebSocket de
+una conexión lo comparten, aunque la misma URL se pida en paralelo. Las respuestas añaden
+`duration_ms` y `size`. Las cabeceras se escriben dos veces: `headers` (un diccionario, como
+antes) y `headers_raw` (una lista de pares que conserva las repetidas, como varios `Set-Cookie`).
+Las tramas WebSocket tienen `type`, `text` o `binary`; las binarias se guardan como cuerpos binarios.
+
 ### JavaScript capturado
 
 - **Los scripts se guardan completos.** Los cuerpos dentro del `.jsonl` se truncan a 200 KB,
@@ -190,6 +204,15 @@ Cada registro se vuelca a disco de inmediato: un fallo o un cierre forzado no pi
   como su propia petición), igual que `application/ld+json` y `text/template`: no son código.
 - Los nombres de archivo llevan un hash corto del contenido, así distintas compilaciones del
   mismo `app.js` nunca se sobrescriben.
+
+### Source maps
+
+Los navegadores solo descargan los source maps con las DevTools abiertas, así que normalmente
+no pasan por la red. httpcrabber extrae cada mapa que ve —mapas `data:` en línea y cualquier
+respuesta `.map`— en `js/<host>/sources/`. Con `--sourcemaps` además pide los mapas que
+referencian los scripts, a través de su propio proxy y tu upstream, así que también quedan en
+el volcado, marcados con `fetched_by: "sourcemap"`. Muchos sitios no publican mapas; cuando lo
+hacen, obtienes el árbol original del proyecto en lugar de un bundle minificado.
 
 ## Cómo funciona
 
@@ -231,6 +254,9 @@ forma habitual cabeceras `Cookie`, `Set-Cookie`, `Authorization`, claves de API 
 todos los sitios que visitaste durante la sesión.
 
 - `LOGS/` y `*.jsonl` están excluidos en [`.gitignore`](.gitignore) — **que siga así**.
+- **Para compartir una sesión, crea una copia enmascarada:** `httpcrabber redact LOGS/target_recon`
+  → `LOGS/target_recon_redacted/`. Las cabeceras de autorización, las cookies y los tokens en URLs,
+  formularios y JSON pasan a `[REDACTED]`; los scripts se copian tal cual y la sesión original no cambia.
 - Nunca subas, publiques ni compartas un volcado de sesión sin revisarlo antes.
 - Trata una carpeta de sesión como si fuera la exportación de tu gestor de contraseñas.
   Porque en la práctica lo es.

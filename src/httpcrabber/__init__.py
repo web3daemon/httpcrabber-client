@@ -8,6 +8,6 @@ Foundation, either version 3 of the License, or (at your option) any later
 version. See <https://www.gnu.org/licenses/>.
 """
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 __all__ = ["__version__"]

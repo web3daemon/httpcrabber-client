@@ -7,7 +7,7 @@
 在网络层捕获流量并全部保存到磁盘 —— 无需扩展、不注入代码，页面按原样运行。
 
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
-[![版本 v1.1.0](assets/badge-version.svg)](https://github.com/web3daemon/httpcrabber-client/releases/latest)
+[![版本 v1.2.0](assets/badge-version.svg)](https://github.com/web3daemon/httpcrabber-client/releases/latest)
 [![Python 3.11+](assets/badge-python.svg)](https://www.python.org/)
 [![平台 Windows · macOS · Linux](assets/badge-platform.svg)](#环境要求)
 [![许可证 GPL-3.0](assets/badge-license.svg)](LICENSE)
@@ -52,6 +52,8 @@ httpcrabber
 | 🧅 **支持任意上游代理** | `socks5` / `socks5h` / `socks4` / `http` / `https`，带或不带认证，支持所有常见写法 |
 | 🗂 **每个会话独立文件夹** | 网络转储与全部脚本放在一起，可整体归档或分享 |
 | 📜 **完整抓取 JavaScript** | 外部打包文件与内联 `<script>` 块，完整保存并按 SHA-256 去重 |
+| 🗺 **Source map → 原始源码** | map 会被解包成项目的原始目录结构；`--sourcemaps` 会主动下载脚本引用的 map |
+| 🕶 **安全分享** | `httpcrabber redact` 生成令牌、Cookie 和授权头均已脱敏的副本 |
 | 🌐 **Chrome 自动启动** | 通过代理启动并使用独立配置；也可用 `--no-browser` 使用你自己的浏览器 |
 | 🔐 **自动配置 CA 证书** | 首次运行时自动检查并安装证书，支持 Windows、macOS 与 Linux |
 | ⌨️ **可脚本化** | 每个提问都有对应参数；全部传入则不再询问 |
@@ -121,6 +123,7 @@ httpcrabber
 httpcrabber --lang en --session "target recon" --proxy socks5://user:pass@1.2.3.4:1080
 httpcrabber -l en -s quick --direct --no-browser          # 使用你自己的浏览器 / 设备
 httpcrabber --no-anim                                      # 纯文本输出，无动画
+httpcrabber -s api --include '*.target.com' --sourcemaps  # 只记录目标 + 原始源码
 ```
 
 | 参数 | 含义 |
@@ -131,6 +134,9 @@ httpcrabber --no-anim                                      # 纯文本输出，�
 | `--direct` | 不使用上游代理 |
 | `--port PORT` | mitmproxy 监听端口（默认 `8080`，被占用时取下一个空闲端口） |
 | `-o, --output DIR` | 会话保存目录（默认 `./LOGS`） |
+| `--include HOST` | 只记录匹配的主机 —— glob，可重复（`*.target.com`） |
+| `--exclude HOST` | 永不记录匹配的主机 —— glob，可重复 |
+| `--sourcemaps` | 下载脚本引用的 source map 并解包原始源码 |
 | `--no-browser` | 不启动 Chrome —— 将任意浏览器或设备指向 `127.0.0.1:<port>` |
 | `--no-anim` | 关闭动画 |
 | `-V, --version` | 显示版本 |
@@ -161,7 +167,9 @@ LOGS/
     └── js/
         ├── index.json                         # 清单：url、文件、sha256、大小、命中次数
         ├── cdn.target.com/
-        │   └── main.a3f1c8d4.js               # 外部脚本
+        │   ├── main.a3f1c8d4.js               # 外部脚本
+        │   ├── maps/main.js.9c1d2e3f.map      # source map
+        │   └── sources/app/src/…              # 从 map 中解包的原始源码
         └── target.com/
             └── inline/inline_0001.e5f6a7b8.js # 内联 <script> 块
 ```
@@ -174,6 +182,11 @@ LOGS/
 `request` · `response` · `ws_open` · `ws_msg` · `ws_close` · `error`。
 每条记录都会立即写入磁盘，即使崩溃或被强制终止也不会丢失数据。
 
+每条记录都带有 `id`：同一连接的请求、响应、错误和 WebSocket 帧共享它 —— 即使同一 URL
+被并发请求也能对应上。响应额外包含 `duration_ms` 和 `size`。请求头写两份：`headers`（字典，
+与以前相同）和 `headers_raw`（键值对列表，保留重复的头，例如多个 `Set-Cookie`）。
+WebSocket 帧带有 `type`：`text` 或 `binary`；二进制帧按二进制响应体的方式保存。
+
 ### 抓取的 JavaScript
 
 - **脚本完整保存。** `.jsonl` 中的响应体会在 200 KB 处截断，但 `js/` 目录中的文件是完整
@@ -182,6 +195,14 @@ LOGS/
 - **从 HTML 中提取内联脚本。** 带 `src=` 的标签会被跳过（它们会作为独立请求到达），
   `application/ld+json` 与 `text/template` 同样跳过 —— 它们不是代码。
 - 文件名包含内容的短哈希，因此同一个 `app.js` 的不同构建版本不会相互覆盖。
+
+### Source map
+
+浏览器只有在打开开发者工具时才会下载 source map，所以通常它们不会出现在网络上。
+httpcrabber 会把看到的每个 map —— 内联的 `data:` map 和任何 `.map` 响应 —— 解包到
+`js/<主机>/sources/`。加上 `--sourcemaps` 后，它还会通过自己的代理和你的上游代理主动请求
+脚本引用的 map，这些请求同样进入转储，并标记为 `fetched_by: "sourcemap"`。很多生产站点不发布
+map；一旦发布，你得到的就是项目的原始目录结构，而不是压缩后的 bundle。
 
 ## 工作原理
 
@@ -221,6 +242,9 @@ src/httpcrabber/
 `Cookie`、`Set-Cookie`、`Authorization` 请求头、API 密钥与令牌。
 
 - `LOGS/` 与 `*.jsonl` 已在 [`.gitignore`](.gitignore) 中排除 —— **请保持这样**。
+- **要分享会话，先生成脱敏副本：** `httpcrabber redact LOGS/target_recon` →
+  `LOGS/target_recon_redacted/`。授权头、Cookie，以及 URL、表单和 JSON 中的令牌会被替换为
+  `[REDACTED]`；脚本原样复制，原始会话保持不变。
 - 在未经检查之前，切勿提交、上传或分享会话转储。
 - 请把会话文件夹当作你的密码管理器导出文件来对待。因为它实际上就是。
 - 本工具会安装一个本地生成的根 CA。使用完毕后如何移除，请参阅 [SECURITY.md](SECURITY.md)。

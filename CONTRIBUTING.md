@@ -71,6 +71,8 @@ src/httpcrabber/
   `python scripts/gen_screenshots.py` (static screens), `python scripts/gen_demo.py`
   (animated demo), `python scripts/gen_logo.py` (logo and social preview — the crab lives in
   `ui.PIXEL_CRAB`), `python scripts/gen_badges.py` (badges, including the release version).
+  For release posts, `python scripts/gen_video.py` renders the same demo as MP4 for X,
+  Instagram feed and Reels into `build/media/` (needs Chrome and ffmpeg; not committed).
 - **`README.md` uses absolute links** (raw.githubusercontent / blob URLs): it is also the
   PyPI project page, where relative images and links break. The other READMEs are GitHub-only.
 - **Style:** `ruff` is the only arbiter. Line length 100. Comments explain *why*, not *what*.

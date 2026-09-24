@@ -10,7 +10,7 @@ version. See <https://www.gnu.org/licenses/>.
 
 from httpcrabber._compat import patch_bcrypt_for_passlib
 
-__version__ = "1.3.0"
+__version__ = "1.4.0"
 
 __all__ = ["__version__"]
 

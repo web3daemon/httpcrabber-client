@@ -7,7 +7,7 @@
 Captures on the wire and saves everything to disk — no extensions, no injected code, the page runs untouched.
 
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
-[![Release v1.3.0](https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
+[![Release v1.4.0](https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
 [![Python 3.11+](https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/badge-python.svg)](https://www.python.org/)
 [![Platform Windows · macOS · Linux](https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/badge-platform.svg)](#requirements)
 [![License GPL-3.0](https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/badge-license.svg)](https://github.com/web3daemon/httpcrabber-client/blob/main/LICENSE)
@@ -59,6 +59,7 @@ can use a proxy works.
 | 🕶 **Safe sharing** | `httpcrabber redact` makes a copy with tokens, cookies and auth headers masked |
 | 🧬 **OpenAPI from traffic** | `httpcrabber openapi` turns a session into an OpenAPI 3.1 spec — path templates, parameters, JSON schemas, auth |
 | 📤 **HAR & curl export** | Open a session in DevTools, Charles, Insomnia or Burp, or replay any request as a curl command |
+| 🔎 **Session browser** | `httpcrabber browse` — filter requests, read bodies, copy curl, replay a request as is or after editing it |
 | 🌐 **Chrome starts itself** | Launched through the proxy with a dedicated profile — or bring your own browser with `--no-browser` |
 | 🔐 **Automatic CA setup** | Certificate checked and installed on first run, on Windows, macOS and Linux |
 | ⌨️ **Scriptable** | Every prompt has a flag; pass them all and nothing is asked |
@@ -223,7 +224,13 @@ you get the original project tree instead of a minified bundle.
 
 Everything below works on a finished session — pass its folder or its `.jsonl`.
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/screen-browse.svg" alt="httpcrabber browse: requests on the left, pretty-printed response on the right" width="100%">
+</p>
+
 ```bash
+httpcrabber ls                                         # saved sessions, newest first
+httpcrabber browse                                     # explore the newest one in the terminal
 httpcrabber openapi LOGS/target_recon                  # → LOGS/target_recon/openapi.json
 httpcrabber openapi LOGS/target_recon -o api.yaml --host 'api.*'
 httpcrabber export har LOGS/target_recon               # → LOGS/target_recon/target_recon.har
@@ -233,6 +240,8 @@ httpcrabber redact LOGS/target_recon                   # masked copy for sharing
 
 | Command | What you get |
 |---|---|
+| `ls` | Every saved session with its start time, duration, request count, dump size and what's inside (scripts, recovered sources, HAR, spec). |
+| `browse` | A terminal UI for the session: filter (`method:POST status:4xx host:api graphql`), headers and pretty-printed bodies, WebSocket frames, the request as curl — and **replay**: <kbd>r</kbd> sends it again, <kbd>e</kbd> lets you edit method, URL, headers and body first, and the new response is shown next to the recorded one. |
 | `openapi` | An OpenAPI 3.1 spec of the API calls: path templates (`/users/42` → `/users/{userId}`), query and header parameters, JSON schemas merged across every sample, status codes, Bearer / Basic / API-key auth, GraphQL operation names. Example values are redacted. Open it in Swagger UI, Postman, Insomnia or feed it to a code generator. |
 | `export har` | A HAR 1.2 archive for Chrome DevTools (Network → Import HAR), Charles, Fiddler, Insomnia or Burp — with cookies, query strings, form fields and WebSocket frames. |
 | `export curl` | Ready-to-run curl commands, filtered by `--match`, `--method` or `--id`. Quoting follows your OS (`--shell posix` / `powershell`). |
@@ -274,6 +283,7 @@ src/httpcrabber/
   commands.py  redact / export / openapi    dump.py     reads a recorded session
   export.py    HAR and curl                 openapi.py  OpenAPI inference
   sourcemaps.py unpacking source maps       redact.py   masking secrets
+  browse.py    terminal session browser     replay.py   request replay
 ```
 
 ## ⚠️ Security

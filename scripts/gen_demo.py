@@ -33,7 +33,7 @@ from httpcrabber.cli import QMARK  # noqa: E402
 from httpcrabber.config import REPO_URL, settings  # noqa: E402
 from httpcrabber.i18n import t  # noqa: E402
 
-WIDTH, ROWS = 100, 26
+WIDTH, ROWS = 100, 28
 OUT = ROOT / "assets"
 SEP = "\x1f"
 FMT = SEP.join(["{styles}", "{lines}", "{backgrounds}", "{matrix}", "{chrome}", "{width}",
@@ -176,6 +176,10 @@ def scenario():
     frames.append((list(final), 0.6))
     demo = ScreenshotLogger()
     final += [ui.summary_panel(demo_cfg(), demo, 221),
+              ui.Align.center(Text.from_markup(t(
+                  "next_steps", browse=f"[{ui.CYAN}]httpcrabber browse LOGS/target_recon[/]",
+                  openapi=f"[{ui.CYAN}]httpcrabber openapi LOGS/target_recon[/]"),
+                  style=ui.DIM)),
               Text(REPO_URL, style=ui.DIM, justify="center"),
               ui.Align.center(ui.pixel_crab()),
               ui.Align.center(Text(t("bye"), style=ui.CYAN))]

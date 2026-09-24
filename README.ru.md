@@ -7,7 +7,7 @@
 Снимает трафик на уровне сети и сохраняет всё на диск — без расширений и внедрённого кода, страница работает как есть.
 
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
-[![Релиз v1.3.0](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
+[![Релиз v1.4.0](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
 [![Python 3.11+](assets/badge-python.svg)](https://www.python.org/)
 [![Платформы Windows · macOS · Linux](assets/badge-platform.svg)](#требования)
 [![Лицензия GPL-3.0](assets/badge-license.svg)](LICENSE)
@@ -59,6 +59,7 @@ DevTools хороши, чтобы быстро посмотреть, но как
 | 🕶 **Безопасно поделиться** | `httpcrabber redact` делает копию с замаскированными токенами, куками и заголовками авторизации |
 | 🧬 **OpenAPI из трафика** | `httpcrabber openapi` превращает сессию в спеку OpenAPI 3.1 — шаблоны путей, параметры, JSON-схемы, авторизация |
 | 📤 **Экспорт в HAR и curl** | Открой сессию в DevTools, Charles, Insomnia или Burp либо повтори любой запрос curl-командой |
+| 🔎 **Браузер сессии** | `httpcrabber browse` — фильтр запросов, тела, curl, повтор запроса как есть или после правки |
 | 🌐 **Chrome стартует сам** | Через прокси с отдельным профилем — или свой браузер через `--no-browser` |
 | 🔐 **Автонастройка CA** | Сертификат проверяется и ставится при первом запуске — на Windows, macOS и Linux |
 | ⌨️ **Скриптуется** | У каждого вопроса есть флаг; передай все — и ничего не спросит |
@@ -223,7 +224,13 @@ LOGS/
 
 Всё ниже работает с готовой сессией — передай её папку или `.jsonl`.
 
+<p align="center">
+  <img src="assets/screen-browse.svg" alt="httpcrabber browse: запросы слева, отформатированный ответ справа" width="100%">
+</p>
+
 ```bash
+httpcrabber ls                                         # сохранённые сессии, новые сверху
+httpcrabber browse                                     # разобрать самую свежую в терминале
 httpcrabber openapi LOGS/target_recon                  # → LOGS/target_recon/openapi.json
 httpcrabber openapi LOGS/target_recon -o api.yaml --host 'api.*'
 httpcrabber export har LOGS/target_recon               # → LOGS/target_recon/target_recon.har
@@ -233,6 +240,8 @@ httpcrabber redact LOGS/target_recon                   # замаскирова�
 
 | Команда | Что получаешь |
 |---|---|
+| `ls` | Все сохранённые сессии: время старта, длительность, число запросов, размер дампа и что внутри (скрипты, восстановленные исходники, HAR, спека). |
+| `browse` | Терминальный интерфейс сессии: фильтр (`method:POST status:4xx host:api graphql`), заголовки и отформатированные тела, кадры WebSocket, запрос в виде curl — и **повтор**: <kbd>r</kbd> отправляет запрос заново, <kbd>e</kbd> даёт сначала поправить метод, URL, заголовки и тело; новый ответ показывается рядом с записанным. |
 | `openapi` | Спеку OpenAPI 3.1 по вызовам API: шаблоны путей (`/users/42` → `/users/{userId}`), query- и header-параметры, JSON-схемы, слитые по всем образцам, коды ответов, авторизацию Bearer / Basic / API-ключ, имена GraphQL-операций. Примеры замаскированы. Открывается в Swagger UI, Postman, Insomnia и годится для генераторов кода. |
 | `export har` | Архив HAR 1.2 для Chrome DevTools (Network → Import HAR), Charles, Fiddler, Insomnia или Burp — с куками, query-строками, полями форм и кадрами WebSocket. |
 | `export curl` | Готовые curl-команды с фильтрами `--match`, `--method`, `--id`. Кавычки — под твою ОС (`--shell posix` / `powershell`). |
@@ -274,6 +283,7 @@ src/httpcrabber/
   commands.py  redact / export / openapi      dump.py     чтение записанной сессии
   export.py    HAR и curl                     openapi.py  вывод OpenAPI
   sourcemaps.py распаковка source maps        redact.py   маскирование секретов
+  browse.py    браузер сессии в терминале     replay.py   повтор запросов
 ```
 
 ## ⚠️ Безопасность

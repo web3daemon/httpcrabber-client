@@ -177,6 +177,9 @@ def main(argv: list[str] | None = None) -> int:
     if logger is None:
         return 1
     console.print(ui.summary_panel(cfg, logger, getattr(logger, "duration", 0.0)))
+    console.print(t("next_steps", browse=f"[{CYAN}]httpcrabber browse {cfg.session_dir}[/]",
+                    openapi=f"[{CYAN}]httpcrabber openapi {cfg.session_dir}[/]"),
+                  justify="center", style=DIM)
     console.print(f"[{DIM}]{REPO_URL}[/]", justify="center", style=MAG)
     ui.farewell()
     return 0

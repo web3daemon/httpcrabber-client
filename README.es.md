@@ -7,7 +7,7 @@
 Captura en la red y guarda todo en disco: sin extensiones ni código inyectado, la página funciona tal cual.
 
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
-[![Versión v1.3.0](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
+[![Versión v1.4.0](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
 [![Python 3.11+](assets/badge-python.svg)](https://www.python.org/)
 [![Plataformas Windows · macOS · Linux](assets/badge-platform.svg)](#requisitos)
 [![Licencia GPL-3.0](assets/badge-license.svg)](LICENSE)
@@ -60,6 +60,7 @@ navegador o dispositivo que pueda usar un proxy.
 | 🕶 **Compartir con seguridad** | `httpcrabber redact` crea una copia con tokens, cookies y cabeceras de autorización enmascarados |
 | 🧬 **OpenAPI desde el tráfico** | `httpcrabber openapi` convierte una sesión en una especificación OpenAPI 3.1: rutas, parámetros, esquemas JSON, autenticación |
 | 📤 **Exportar a HAR y curl** | Abre una sesión en DevTools, Charles, Insomnia o Burp, o repite cualquier petición como comando curl |
+| 🔎 **Navegador de sesiones** | `httpcrabber browse`: filtra peticiones, lee cuerpos, copia curl, repite una petición tal cual o tras editarla |
 | 🌐 **Chrome se inicia solo** | A través del proxy con un perfil dedicado, o usa tu propio navegador con `--no-browser` |
 | 🔐 **Configuración automática de CA** | El certificado se comprueba e instala en el primer arranque, en Windows, macOS y Linux |
 | ⌨️ **Automatizable** | Cada pregunta tiene su flag; pásalos todos y no se pregunta nada |
@@ -225,7 +226,13 @@ hacen, obtienes el árbol original del proyecto en lugar de un bundle minificado
 
 Todo lo de abajo funciona con una sesión terminada: pasa su carpeta o su `.jsonl`.
 
+<p align="center">
+  <img src="assets/screen-browse.svg" alt="httpcrabber browse: peticiones a la izquierda, respuesta formateada a la derecha" width="100%">
+</p>
+
 ```bash
+httpcrabber ls                                         # sesiones guardadas, las nuevas primero
+httpcrabber browse                                     # explora la más reciente en la terminal
 httpcrabber openapi LOGS/target_recon                  # → LOGS/target_recon/openapi.json
 httpcrabber openapi LOGS/target_recon -o api.yaml --host 'api.*'
 httpcrabber export har LOGS/target_recon               # → LOGS/target_recon/target_recon.har
@@ -235,6 +242,8 @@ httpcrabber redact LOGS/target_recon                   # copia enmascarada para 
 
 | Comando | Qué obtienes |
 |---|---|
+| `ls` | Todas las sesiones guardadas: inicio, duración, número de peticiones, tamaño del volcado y su contenido (scripts, fuentes recuperadas, HAR, especificación). |
+| `browse` | Una interfaz de terminal para la sesión: filtro (`method:POST status:4xx host:api graphql`), cabeceras y cuerpos formateados, tramas WebSocket, la petición como curl y **repetición**: <kbd>r</kbd> la envía de nuevo, <kbd>e</kbd> permite editar antes método, URL, cabeceras y cuerpo, y la respuesta nueva aparece junto a la grabada. |
 | `openapi` | Una especificación OpenAPI 3.1 de las llamadas a la API: plantillas de rutas (`/users/42` → `/users/{userId}`), parámetros de query y cabeceras, esquemas JSON fusionados de todas las muestras, códigos de estado, autenticación Bearer / Basic / API key y nombres de operaciones GraphQL. Los ejemplos van enmascarados. Ábrela en Swagger UI, Postman, Insomnia o úsala con un generador de código. |
 | `export har` | Un archivo HAR 1.2 para Chrome DevTools (Network → Import HAR), Charles, Fiddler, Insomnia o Burp, con cookies, query strings, campos de formulario y tramas WebSocket. |
 | `export curl` | Comandos curl listos para ejecutar, filtrados con `--match`, `--method` o `--id`. Las comillas siguen tu SO (`--shell posix` / `powershell`). |
@@ -276,6 +285,7 @@ src/httpcrabber/
   commands.py  redact / export / openapi      dump.py     lectura de una sesión grabada
   export.py    HAR y curl                     openapi.py  inferencia de OpenAPI
   sourcemaps.py extracción de source maps     redact.py   enmascarado de secretos
+  browse.py    navegador de sesiones          replay.py   repetir peticiones
 ```
 
 ## ⚠️ Seguridad

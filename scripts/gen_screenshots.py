@@ -123,7 +123,65 @@ def summary(c: Console) -> None:
     c.print(ui.summary_panel(demo_cfg(), DemoLogger(), 221))
 
 
+_BODIES = {
+    "/v2/graphql?op=Viewer": {"data": {"viewer": {"id": "u_1478", "name": "operator",
+                                                  "plan": "pro", "flags": ["beta", "api"]}}},
+    "/v2/feed?cursor=eyJpZCI6MTQ3OH0": {"items": [{"id": 912, "title": "Launch notes",
+                                                   "author": {"id": 7, "handle": "crab"},
+                                                   "created_at": "2026-09-24T14:22:11Z"}],
+                                        "next": "eyJpZCI6OTEyfQ"},
+    "/v2/auth/challenge": {"error": "challenge_required", "retry_after": 2},
+}
+
+
+def browse_shot() -> None:
+    """Браузер сессии (Textual) на демо-сессии — во временной папке."""
+    import asyncio
+    import json
+    import tempfile
+
+    from httpcrabber.browse import BrowseApp
+
+    with tempfile.TemporaryDirectory() as tmp:
+        session = Path(tmp) / "target_recon"
+        session.mkdir()
+        lines = []
+        for i, (ts, method, status, url) in enumerate(FEED):
+            fid = f"f{i:02d}"
+            path = url.split("target.com", 1)[-1]
+            body = _BODIES.get(path)
+            lines.append({"ts": f"2026-09-24T{ts}.000", "event": "request", "id": fid, "url": url,
+                          "method": "GET" if method in ("WS", "ERR") else method,
+                          "headers_raw": [["Accept", "application/json"],
+                                          ["Authorization", "Bearer ••••"],
+                                          ["X-Client-Version", "4.2.0"]]})
+            if method == "ERR":
+                lines.append({"event": "error", "id": fid, "url": url, "error": "connection reset"})
+                continue
+            lines.append({"ts": f"2026-09-24T{ts}.120", "event": "response", "id": fid, "url": url,
+                          "status": status if isinstance(status, int) else 101, "reason": "",
+                          "headers_raw": [["Content-Type", "application/json"]],
+                          "body": json.dumps(body) if body else "", "size": 180 + i * 97,
+                          "duration_ms": 40.0 + i * 13})
+        (session / "target_recon.jsonl").write_text(
+            "\n".join(json.dumps(x) for x in lines), encoding="utf-8")
+
+        async def run() -> None:
+            app = BrowseApp(session, shell="posix")
+            async with app.run_test(size=(140, 34)) as pilot:
+                await pilot.pause(0.3)
+                await pilot.press("down", "down", "down", "2")
+                await pilot.pause(0.5)
+                app.save_screenshot(str(OUT / "screen-browse.svg"))
+
+        asyncio.run(run())
+    path = OUT / "screen-browse.svg"
+    path.write_text(path.read_text(encoding="utf-8"), encoding="utf-8", newline="\n")
+    print(f"  {path.relative_to(ROOT)}")
+
+
 def main() -> None:
+    browse_shot()
     settings.anim = False
     # Штамп времени у статусных строк — фиксированный, чтобы скриншоты не «дрожали» в диффах
     ui.time.strftime = lambda fmt, *a: "14:22:05"

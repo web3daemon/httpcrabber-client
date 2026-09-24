@@ -47,6 +47,9 @@ src/httpcrabber/
   openapi.py   OpenAPI 3.1 inference: path templates, schema merging
   redact.py    masking secrets in a copy of a session
   commands.py  subcommands: redact, export, openapi
+  sessions.py  finding saved sessions for `ls` / `browse`
+  browse.py    Textual session browser
+  replay.py    sending a recorded request again
   _compat.py   third-party compatibility shims (applied before mitmproxy loads)
   i18n.py      UI strings (ru, en)
   procs.py     child-process registry, ports

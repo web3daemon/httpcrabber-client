@@ -7,7 +7,7 @@
 在网络层捕获流量并全部保存到磁盘 —— 无需扩展、不注入代码，页面按原样运行。
 
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
-[![版本 v1.3.0](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
+[![版本 v1.4.0](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
 [![Python 3.11+](assets/badge-python.svg)](https://www.python.org/)
 [![平台 Windows · macOS · Linux](assets/badge-platform.svg)](#环境要求)
 [![许可证 GPL-3.0](assets/badge-license.svg)](LICENSE)
@@ -56,6 +56,7 @@ httpcrabber
 | 🕶 **安全分享** | `httpcrabber redact` 生成令牌、Cookie 和授权头均已脱敏的副本 |
 | 🧬 **从流量生成 OpenAPI** | `httpcrabber openapi` 把会话转换为 OpenAPI 3.1 规范 —— 路径模板、参数、JSON Schema、认证 |
 | 📤 **导出 HAR 与 curl** | 在开发者工具、Charles、Insomnia 或 Burp 中打开会话，或把任意请求重放为 curl 命令 |
+| 🔎 **会话浏览器** | `httpcrabber browse` —— 过滤请求、查看正文、复制 curl、原样或修改后重放请求 |
 | 🌐 **Chrome 自动启动** | 通过代理启动并使用独立配置；也可用 `--no-browser` 使用你自己的浏览器 |
 | 🔐 **自动配置 CA 证书** | 首次运行时自动检查并安装证书，支持 Windows、macOS 与 Linux |
 | ⌨️ **可脚本化** | 每个提问都有对应参数；全部传入则不再询问 |
@@ -214,7 +215,13 @@ map；一旦发布，你得到的就是项目的原始目录结构，而不是�
 
 以下命令都作用于已结束的会话 —— 传入会话文件夹或其 `.jsonl` 即可。
 
+<p align="center">
+  <img src="assets/screen-browse.svg" alt="httpcrabber browse：左侧为请求列表，右侧为格式化的响应" width="100%">
+</p>
+
 ```bash
+httpcrabber ls                                         # 已保存的会话，最新的在前
+httpcrabber browse                                     # 在终端中查看最新的会话
 httpcrabber openapi LOGS/target_recon                  # → LOGS/target_recon/openapi.json
 httpcrabber openapi LOGS/target_recon -o api.yaml --host 'api.*'
 httpcrabber export har LOGS/target_recon               # → LOGS/target_recon/target_recon.har
@@ -224,6 +231,8 @@ httpcrabber redact LOGS/target_recon                   # 脱敏副本，便于�
 
 | 命令 | 产出 |
 |---|---|
+| `ls` | 列出所有已保存的会话：开始时间、时长、请求数、转储大小以及包含的内容（脚本、恢复的源码、HAR、规范）。 |
+| `browse` | 会话的终端界面：过滤（`method:POST status:4xx host:api graphql`）、请求头与格式化的正文、WebSocket 帧、curl 形式的请求，以及**重放**：<kbd>r</kbd> 重新发送，<kbd>e</kbd> 可先修改方法、URL、请求头和正文，新响应与录制的响应并排显示。 |
 | `openapi` | 基于 API 调用推断的 OpenAPI 3.1 规范：路径模板（`/users/42` → `/users/{userId}`）、query 与请求头参数、合并所有样本得到的 JSON Schema、状态码、Bearer / Basic / API Key 认证、GraphQL 操作名。示例值已脱敏。可导入 Swagger UI、Postman、Insomnia 或交给代码生成器。 |
 | `export har` | HAR 1.2 归档，可在 Chrome 开发者工具（Network → Import HAR）、Charles、Fiddler、Insomnia 或 Burp 中打开，包含 Cookie、查询参数、表单字段和 WebSocket 帧。 |
 | `export curl` | 可直接运行的 curl 命令，可用 `--match`、`--method`、`--id` 过滤。引号风格随操作系统（`--shell posix` / `powershell`）。 |
@@ -264,6 +273,7 @@ src/httpcrabber/
   commands.py  redact / export / openapi dump.py     读取已记录的会话
   export.py    HAR 与 curl           openapi.py  推断 OpenAPI
   sourcemaps.py 解包 source map       redact.py   秘密脱敏
+  browse.py    终端会话浏览器              replay.py   请求重放
 ```
 
 ## ⚠️ 安全提示

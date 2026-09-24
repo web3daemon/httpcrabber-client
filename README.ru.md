@@ -7,7 +7,7 @@
 Снимает трафик на уровне сети и сохраняет всё на диск — без расширений и внедрённого кода, страница работает как есть.
 
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
-[![Релиз v1.2.0](assets/badge-version.svg)](https://github.com/web3daemon/httpcrabber-client/releases/latest)
+[![Релиз v1.2.0](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
 [![Python 3.11+](assets/badge-python.svg)](https://www.python.org/)
 [![Платформы Windows · macOS · Linux](assets/badge-platform.svg)](#требования)
 [![Лицензия GPL-3.0](assets/badge-license.svg)](LICENSE)
@@ -26,7 +26,7 @@
 ## ⚡ Старт за 30 секунд
 
 ```bash
-pip install git+https://github.com/web3daemon/httpcrabber-client.git
+pip install httpcrabber
 httpcrabber
 ```
 
@@ -79,7 +79,7 @@ DevTools хороши, чтобы быстро посмотреть, но как
 ## Установка
 
 ```bash
-pip install git+https://github.com/web3daemon/httpcrabber-client.git
+pip install httpcrabber          # или: pipx install httpcrabber
 httpcrabber --version
 ```
 

@@ -7,7 +7,7 @@
 Captures on the wire and saves everything to disk — no extensions, no injected code, the page runs untouched.
 
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
-[![Release v1.2.0](https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/badge-version.svg)](https://github.com/web3daemon/httpcrabber-client/releases/latest)
+[![Release v1.2.0](https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
 [![Python 3.11+](https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/badge-python.svg)](https://www.python.org/)
 [![Platform Windows · macOS · Linux](https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/badge-platform.svg)](#requirements)
 [![License GPL-3.0](https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/badge-license.svg)](https://github.com/web3daemon/httpcrabber-client/blob/main/LICENSE)
@@ -26,7 +26,7 @@ Captures on the wire and saves everything to disk — no extensions, no injected
 ## ⚡ 30-second start
 
 ```bash
-pip install git+https://github.com/web3daemon/httpcrabber-client.git
+pip install httpcrabber
 httpcrabber
 ```
 
@@ -79,7 +79,7 @@ Set `HTTPCRABBER_BROWSER=/path/to/chrome` to override discovery on any OS.
 ## Install
 
 ```bash
-pip install git+https://github.com/web3daemon/httpcrabber-client.git
+pip install httpcrabber          # or: pipx install httpcrabber
 httpcrabber --version
 ```
 

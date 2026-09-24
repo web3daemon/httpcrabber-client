@@ -7,7 +7,7 @@
 Captura en la red y guarda todo en disco: sin extensiones ni código inyectado, la página funciona tal cual.
 
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
-[![Versión v1.2.1](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
+[![Versión v1.3.0](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
 [![Python 3.11+](assets/badge-python.svg)](https://www.python.org/)
 [![Plataformas Windows · macOS · Linux](assets/badge-platform.svg)](#requisitos)
 [![Licencia GPL-3.0](assets/badge-license.svg)](LICENSE)
@@ -19,7 +19,7 @@ Captura en la red y guarda todo en disco: sin extensiones ni código inyectado, 
 
 <img src="assets/demo.svg" alt="Demo de httpcrabber: arranque, intercepción en vivo, resumen" width="100%">
 
-[**Características**](#características) · [**Instalación**](#instalación) · [**Inicio rápido**](#inicio-rápido) · [**Línea de comandos**](#línea-de-comandos) · [**Qué se guarda**](#qué-se-guarda) · [**Cómo funciona**](#cómo-funciona) · [**Seguridad**](#-seguridad)
+[**Características**](#características) · [**Instalación**](#instalación) · [**Inicio rápido**](#inicio-rápido) · [**Línea de comandos**](#línea-de-comandos) · [**Qué se guarda**](#qué-se-guarda) · [**Trabajar con una sesión**](#trabajar-con-una-sesión) · [**Cómo funciona**](#cómo-funciona) · [**Seguridad**](#-seguridad)
 
 </div>
 
@@ -58,6 +58,8 @@ navegador o dispositivo que pueda usar un proxy.
 | 📜 **Captura completa de JavaScript** | Bundles externos y bloques `<script>` en línea, completos y deduplicados por SHA-256 |
 | 🗺 **Source maps → fuentes originales** | Los mapas se extraen en el árbol original del proyecto; `--sourcemaps` descarga los que referencian los scripts |
 | 🕶 **Compartir con seguridad** | `httpcrabber redact` crea una copia con tokens, cookies y cabeceras de autorización enmascarados |
+| 🧬 **OpenAPI desde el tráfico** | `httpcrabber openapi` convierte una sesión en una especificación OpenAPI 3.1: rutas, parámetros, esquemas JSON, autenticación |
+| 📤 **Exportar a HAR y curl** | Abre una sesión en DevTools, Charles, Insomnia o Burp, o repite cualquier petición como comando curl |
 | 🌐 **Chrome se inicia solo** | A través del proxy con un perfil dedicado, o usa tu propio navegador con `--no-browser` |
 | 🔐 **Configuración automática de CA** | El certificado se comprueba e instala en el primer arranque, en Windows, macOS y Linux |
 | ⌨️ **Automatizable** | Cada pregunta tiene su flag; pásalos todos y no se pregunta nada |
@@ -219,6 +221,27 @@ referencian los scripts, a través de su propio proxy y tu upstream, así que ta
 el volcado, marcados con `fetched_by: "sourcemap"`. Muchos sitios no publican mapas; cuando lo
 hacen, obtienes el árbol original del proyecto en lugar de un bundle minificado.
 
+## Trabajar con una sesión
+
+Todo lo de abajo funciona con una sesión terminada: pasa su carpeta o su `.jsonl`.
+
+```bash
+httpcrabber openapi LOGS/target_recon                  # → LOGS/target_recon/openapi.json
+httpcrabber openapi LOGS/target_recon -o api.yaml --host 'api.*'
+httpcrabber export har LOGS/target_recon               # → LOGS/target_recon/target_recon.har
+httpcrabber export curl LOGS/target_recon -m /graphql -X POST
+httpcrabber redact LOGS/target_recon                   # copia enmascarada para compartir
+```
+
+| Comando | Qué obtienes |
+|---|---|
+| `openapi` | Una especificación OpenAPI 3.1 de las llamadas a la API: plantillas de rutas (`/users/42` → `/users/{userId}`), parámetros de query y cabeceras, esquemas JSON fusionados de todas las muestras, códigos de estado, autenticación Bearer / Basic / API key y nombres de operaciones GraphQL. Los ejemplos van enmascarados. Ábrela en Swagger UI, Postman, Insomnia o úsala con un generador de código. |
+| `export har` | Un archivo HAR 1.2 para Chrome DevTools (Network → Import HAR), Charles, Fiddler, Insomnia o Burp, con cookies, query strings, campos de formulario y tramas WebSocket. |
+| `export curl` | Comandos curl listos para ejecutar, filtrados con `--match`, `--method` o `--id`. Las comillas siguen tu SO (`--shell posix` / `powershell`). |
+| `redact` | Una copia segura para compartir; ver [Seguridad](#-seguridad). |
+
+La especificación solo describe lo observado: falta cualquier endpoint que no se llamó, y un campo visto solo en algunas respuestas es opcional. Es un punto de partida, no un contrato.
+
 ## Cómo funciona
 
 ```mermaid
@@ -250,6 +273,9 @@ src/httpcrabber/
   proxy.py     parser del proxy upstream      bridge.py   puente pproxy
   ca.py        instalación de CA por SO       browser.py  detección de Chrome por SO
   ui.py        animaciones, paneles, feed     i18n.py     textos de la interfaz
+  commands.py  redact / export / openapi      dump.py     lectura de una sesión grabada
+  export.py    HAR y curl                     openapi.py  inferencia de OpenAPI
+  sourcemaps.py extracción de source maps     redact.py   enmascarado de secretos
 ```
 
 ## ⚠️ Seguridad

@@ -9,6 +9,8 @@ import questionary
 from questionary import Style as QStyle
 
 from httpcrabber import __version__, procs, ui
+from httpcrabber.commands import COMMANDS
+from httpcrabber.commands import HELP as COMMANDS_HELP
 from httpcrabber.config import CYAN, DIM, ERR, MAG, REPO_URL, console, settings
 from httpcrabber.i18n import LANGUAGES, STRINGS, t
 from httpcrabber.proxy import Proxy, parse_proxy
@@ -25,11 +27,6 @@ Q_STYLE = QStyle([
     ("text", "fg:#d6ded6"),
 ])
 QMARK = "◆"
-
-
-COMMANDS_HELP = """commands:
-  httpcrabber redact SESSION   copy of a session with secrets masked, for sharing
-"""
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -143,29 +140,10 @@ def configure(args: argparse.Namespace):
     return cfg
 
 
-def redact_main(argv: list[str]) -> int:
-    from httpcrabber.redact import redact_session
-
-    p = argparse.ArgumentParser(
-        prog="httpcrabber redact",
-        description="Write a copy of a session (folder or .jsonl) with tokens, cookies, "
-                    "auth headers and secret-looking fields masked. The original is untouched.",
-    )
-    p.add_argument("session", type=Path, help="session folder (LOGS/<name>) or a .jsonl dump")
-    p.add_argument("-o", "--output", type=Path, help="where to write the copy")
-    args = p.parse_args(argv)
-    if not args.session.exists():
-        console.print(f"[{ERR}]{args.session}: not found[/]")
-        return 2
-    dst, lines, masked = redact_session(args.session, args.output)
-    ui.step(f"{lines} records, [{MAG}]{masked}[/] values masked → [{CYAN}]{dst}[/]")
-    return 0
-
-
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
-    if argv[:1] == ["redact"]:
-        return redact_main(argv[1:])
+    if argv[:1] and argv[0] in COMMANDS:
+        return COMMANDS[argv[0]](argv[1:])
     args = build_parser().parse_args(argv)
     settings.anim = not args.no_anim
     if args.output:

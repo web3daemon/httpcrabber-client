@@ -7,7 +7,7 @@
 在网络层捕获流量并全部保存到磁盘 —— 无需扩展、不注入代码，页面按原样运行。
 
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
-[![版本 v1.2.1](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
+[![版本 v1.3.0](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
 [![Python 3.11+](assets/badge-python.svg)](https://www.python.org/)
 [![平台 Windows · macOS · Linux](assets/badge-platform.svg)](#环境要求)
 [![许可证 GPL-3.0](assets/badge-license.svg)](LICENSE)
@@ -19,7 +19,7 @@
 
 <img src="assets/demo.svg" alt="httpcrabber 演示：启动、实时拦截、会话汇总" width="100%">
 
-[**功能特性**](#功能特性) · [**安装**](#安装) · [**快速开始**](#快速开始) · [**命令行**](#命令行) · [**保存的内容**](#保存的内容) · [**工作原理**](#工作原理) · [**安全提示**](#-安全提示)
+[**功能特性**](#功能特性) · [**安装**](#安装) · [**快速开始**](#快速开始) · [**命令行**](#命令行) · [**保存的内容**](#保存的内容) · [**处理会话**](#处理会话) · [**工作原理**](#工作原理) · [**安全提示**](#-安全提示)
 
 </div>
 
@@ -54,6 +54,8 @@ httpcrabber
 | 📜 **完整抓取 JavaScript** | 外部打包文件与内联 `<script>` 块，完整保存并按 SHA-256 去重 |
 | 🗺 **Source map → 原始源码** | map 会被解包成项目的原始目录结构；`--sourcemaps` 会主动下载脚本引用的 map |
 | 🕶 **安全分享** | `httpcrabber redact` 生成令牌、Cookie 和授权头均已脱敏的副本 |
+| 🧬 **从流量生成 OpenAPI** | `httpcrabber openapi` 把会话转换为 OpenAPI 3.1 规范 —— 路径模板、参数、JSON Schema、认证 |
+| 📤 **导出 HAR 与 curl** | 在开发者工具、Charles、Insomnia 或 Burp 中打开会话，或把任意请求重放为 curl 命令 |
 | 🌐 **Chrome 自动启动** | 通过代理启动并使用独立配置；也可用 `--no-browser` 使用你自己的浏览器 |
 | 🔐 **自动配置 CA 证书** | 首次运行时自动检查并安装证书，支持 Windows、macOS 与 Linux |
 | ⌨️ **可脚本化** | 每个提问都有对应参数；全部传入则不再询问 |
@@ -208,6 +210,27 @@ httpcrabber 会把看到的每个 map —— 内联的 `data:` map 和任何 `.m
 脚本引用的 map，这些请求同样进入转储，并标记为 `fetched_by: "sourcemap"`。很多生产站点不发布
 map；一旦发布，你得到的就是项目的原始目录结构，而不是压缩后的 bundle。
 
+## 处理会话
+
+以下命令都作用于已结束的会话 —— 传入会话文件夹或其 `.jsonl` 即可。
+
+```bash
+httpcrabber openapi LOGS/target_recon                  # → LOGS/target_recon/openapi.json
+httpcrabber openapi LOGS/target_recon -o api.yaml --host 'api.*'
+httpcrabber export har LOGS/target_recon               # → LOGS/target_recon/target_recon.har
+httpcrabber export curl LOGS/target_recon -m /graphql -X POST
+httpcrabber redact LOGS/target_recon                   # 脱敏副本，便于分享
+```
+
+| 命令 | 产出 |
+|---|---|
+| `openapi` | 基于 API 调用推断的 OpenAPI 3.1 规范：路径模板（`/users/42` → `/users/{userId}`）、query 与请求头参数、合并所有样本得到的 JSON Schema、状态码、Bearer / Basic / API Key 认证、GraphQL 操作名。示例值已脱敏。可导入 Swagger UI、Postman、Insomnia 或交给代码生成器。 |
+| `export har` | HAR 1.2 归档，可在 Chrome 开发者工具（Network → Import HAR）、Charles、Fiddler、Insomnia 或 Burp 中打开，包含 Cookie、查询参数、表单字段和 WebSocket 帧。 |
+| `export curl` | 可直接运行的 curl 命令，可用 `--match`、`--method`、`--id` 过滤。引号风格随操作系统（`--shell posix` / `powershell`）。 |
+| `redact` | 可安全分享的副本 —— 见[安全提示](#-安全提示)。 |
+
+规范只描述观察到的内容：从未调用过的端点不会出现，只在部分响应中出现的字段视为可选。它是一个起点，而不是契约。
+
 ## 工作原理
 
 ```mermaid
@@ -238,6 +261,9 @@ src/httpcrabber/
   proxy.py     上游代理解析                  bridge.py   pproxy 桥接
   ca.py        各系统的 CA 安装              browser.py  各系统的 Chrome 查找
   ui.py        动画、面板、信息流            i18n.py     界面文本
+  commands.py  redact / export / openapi dump.py     读取已记录的会话
+  export.py    HAR 与 curl           openapi.py  推断 OpenAPI
+  sourcemaps.py 解包 source map       redact.py   秘密脱敏
 ```
 
 ## ⚠️ 安全提示

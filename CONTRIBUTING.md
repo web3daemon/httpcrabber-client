@@ -41,6 +41,13 @@ src/httpcrabber/
   ca.py        CA certificate install per OS
   browser.py   Chrome/Chromium discovery and launch per OS
   ui.py        all rendering: animations, panels, live feed, summary
+  sourcemaps.py  finding, fetching and unpacking source maps
+  dump.py      reads a recorded session into request/response exchanges
+  export.py    HAR 1.2 and curl export
+  openapi.py   OpenAPI 3.1 inference: path templates, schema merging
+  redact.py    masking secrets in a copy of a session
+  commands.py  subcommands: redact, export, openapi
+  _compat.py   third-party compatibility shims (applied before mitmproxy loads)
   i18n.py      UI strings (ru, en)
   procs.py     child-process registry, ports
   config.py    constants, palette, runtime settings

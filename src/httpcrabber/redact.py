@@ -96,6 +96,10 @@ class Redactor:
             return self.text(obj)  # JSON внутри строки: эхо-сервисы, GraphQL variables и т.п.
         return obj
 
+    def value(self, obj):
+        """Разобранный JSON с замаскированными секретами (для примеров в OpenAPI)."""
+        return self._json(obj)
+
     def text(self, text):
         """Тело или WS-кадр: JSON, форма или (обрезанный) текст с JSON-парами."""
         if not isinstance(text, str) or not text:

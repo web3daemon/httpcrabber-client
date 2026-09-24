@@ -7,7 +7,7 @@
 Снимает трафик на уровне сети и сохраняет всё на диск — без расширений и внедрённого кода, страница работает как есть.
 
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
-[![Релиз v1.2.1](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
+[![Релиз v1.3.0](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
 [![Python 3.11+](assets/badge-python.svg)](https://www.python.org/)
 [![Платформы Windows · macOS · Linux](assets/badge-platform.svg)](#требования)
 [![Лицензия GPL-3.0](assets/badge-license.svg)](LICENSE)
@@ -19,7 +19,7 @@
 
 <img src="assets/demo.ru.svg" alt="Демо httpcrabber: старт, живой перехват, итоговая сводка" width="100%">
 
-[**Возможности**](#возможности) · [**Установка**](#установка) · [**Быстрый старт**](#быстрый-старт) · [**Командная строка**](#командная-строка) · [**Что сохраняется**](#что-сохраняется) · [**Как это работает**](#как-это-работает) · [**Безопасность**](#-безопасность)
+[**Возможности**](#возможности) · [**Установка**](#установка) · [**Быстрый старт**](#быстрый-старт) · [**Командная строка**](#командная-строка) · [**Что сохраняется**](#что-сохраняется) · [**Работа с сессией**](#работа-с-сессией) · [**Как это работает**](#как-это-работает) · [**Безопасность**](#-безопасность)
 
 </div>
 
@@ -57,6 +57,8 @@ DevTools хороши, чтобы быстро посмотреть, но как
 | 📜 **Полный сбор JavaScript** | Внешние бандлы и инлайновые `<script>`, целиком и с дедупликацией по SHA-256 |
 | 🗺 **Source maps → исходники** | Карты распаковываются в исходное дерево проекта; `--sourcemaps` докачивает те, на которые ссылаются скрипты |
 | 🕶 **Безопасно поделиться** | `httpcrabber redact` делает копию с замаскированными токенами, куками и заголовками авторизации |
+| 🧬 **OpenAPI из трафика** | `httpcrabber openapi` превращает сессию в спеку OpenAPI 3.1 — шаблоны путей, параметры, JSON-схемы, авторизация |
+| 📤 **Экспорт в HAR и curl** | Открой сессию в DevTools, Charles, Insomnia или Burp либо повтори любой запрос curl-командой |
 | 🌐 **Chrome стартует сам** | Через прокси с отдельным профилем — или свой браузер через `--no-browser` |
 | 🔐 **Автонастройка CA** | Сертификат проверяется и ставится при первом запуске — на Windows, macOS и Linux |
 | ⌨️ **Скриптуется** | У каждого вопроса есть флаг; передай все — и ничего не спросит |
@@ -217,6 +219,27 @@ LOGS/
 пометкой `fetched_by: "sourcemap"`. Многие сайты карты не публикуют; если публикуют —
 получаешь исходное дерево проекта вместо минифицированного бандла.
 
+## Работа с сессией
+
+Всё ниже работает с готовой сессией — передай её папку или `.jsonl`.
+
+```bash
+httpcrabber openapi LOGS/target_recon                  # → LOGS/target_recon/openapi.json
+httpcrabber openapi LOGS/target_recon -o api.yaml --host 'api.*'
+httpcrabber export har LOGS/target_recon               # → LOGS/target_recon/target_recon.har
+httpcrabber export curl LOGS/target_recon -m /graphql -X POST
+httpcrabber redact LOGS/target_recon                   # замаскированная копия, чтобы поделиться
+```
+
+| Команда | Что получаешь |
+|---|---|
+| `openapi` | Спеку OpenAPI 3.1 по вызовам API: шаблоны путей (`/users/42` → `/users/{userId}`), query- и header-параметры, JSON-схемы, слитые по всем образцам, коды ответов, авторизацию Bearer / Basic / API-ключ, имена GraphQL-операций. Примеры замаскированы. Открывается в Swagger UI, Postman, Insomnia и годится для генераторов кода. |
+| `export har` | Архив HAR 1.2 для Chrome DevTools (Network → Import HAR), Charles, Fiddler, Insomnia или Burp — с куками, query-строками, полями форм и кадрами WebSocket. |
+| `export curl` | Готовые curl-команды с фильтрами `--match`, `--method`, `--id`. Кавычки — под твою ОС (`--shell posix` / `powershell`). |
+| `redact` | Копию, которой можно делиться, — см. [Безопасность](#-безопасность). |
+
+Спека описывает только увиденное: эндпоинта, который ни разу не вызывался, в ней нет, а поле, встречавшееся не во всех ответах, считается необязательным. Это фора, а не контракт.
+
 ## Как это работает
 
 ```mermaid
@@ -248,6 +271,9 @@ src/httpcrabber/
   proxy.py     разбор upstream-прокси         bridge.py   мост pproxy
   ca.py        установка CA на каждой ОС      browser.py  поиск Chrome на каждой ОС
   ui.py        анимации, панели, лента        i18n.py     строки интерфейса
+  commands.py  redact / export / openapi      dump.py     чтение записанной сессии
+  export.py    HAR и curl                     openapi.py  вывод OpenAPI
+  sourcemaps.py распаковка source maps        redact.py   маскирование секретов
 ```
 
 ## ⚠️ Безопасность

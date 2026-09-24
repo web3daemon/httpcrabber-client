@@ -6,6 +6,28 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.0] — 2026-09-24
+
+Put a recorded session to work. Recording is unchanged; everything new reads the dump.
+
+### Added
+- `httpcrabber openapi SESSION` infers an OpenAPI 3.1 spec from the recorded API calls:
+  path templates (`/users/42` → `/users/{userId}` — integers, UUIDs, long hex ids and
+  tokens), query and `x-` header parameters with `required` when present in every call,
+  request and response JSON schemas merged across all samples (fields missing somewhere
+  become optional, `null` makes a type nullable), per-status responses, Bearer / Basic /
+  API-key security schemes, GraphQL `operationName`s, operation ids and tags. Example
+  values go through `redact`. `-o spec.yaml` writes YAML; `--host` limits the hosts.
+  Static files, pages and httpcrabber's own source-map fetches are skipped.
+- `httpcrabber export har SESSION` writes a HAR 1.2 archive for Chrome DevTools, Charles,
+  Fiddler, Insomnia and Burp — cookies, query strings, form params, redirects, timings and
+  WebSocket frames (`_webSocketMessages`, the DevTools format).
+- `httpcrabber export curl SESSION` prints ready-to-run curl commands, filtered by
+  `--match`, `--method` and `--id`; `--shell posix|powershell` picks the quoting (defaults
+  to the current OS). Headers curl sets itself are dropped, `--compressed` is added when
+  the request accepted compression, truncated or binary bodies are flagged.
+- Sessions recorded before 1.2 (no `id` in the dump) are still paired by URL order.
+
 ## [1.2.1] — 2026-09-24
 
 ### Fixed
@@ -114,7 +136,8 @@ First public release.
 - Free-port detection uses `bind` instead of `connect`, which could hang on filtered ports.
 - Hard `Ctrl+C` on Windows no longer leaves Chrome or the pproxy bridge running.
 
-[Unreleased]: https://github.com/web3daemon/httpcrabber-client/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/web3daemon/httpcrabber-client/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/web3daemon/httpcrabber-client/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/web3daemon/httpcrabber-client/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/web3daemon/httpcrabber-client/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/web3daemon/httpcrabber-client/compare/v1.0.0...v1.1.0

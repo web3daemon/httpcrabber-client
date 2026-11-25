@@ -9,7 +9,7 @@ wheel = Path(filename)
 if not wheel.name.startswith(f"httpcrabber-{version}-cp311-abi3-"):
     raise SystemExit(f"Unexpected release filename: {wheel.name}")
 with ZipFile(wheel) as archive:
-    files = {p for p in archive.namelist() if p.startswith("httpcrabber/")}
+    files = {p for p in archive.namelist() if p.startswith("httpcrabber/") and not p.endswith("/")}
 bootstrap = {"httpcrabber/__main__.py", "httpcrabber/__init__.py"}
 native = {p for p in files if p.endswith((".so", ".pyd"))}
 expected = {p.stem for p in Path("src/httpcrabber").glob("*.py")} - {"__main__", "__init__"}

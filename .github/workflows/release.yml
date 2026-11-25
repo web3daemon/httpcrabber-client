@@ -48,7 +48,7 @@ jobs:
       - name: Test the same stable-ABI wheel on Python 3.12
         shell: bash
         run: |
-          python -m pip install pytest wheelhouse/*.whl
+          python -m pip install pytest 'bcrypt>=5' wheelhouse/*.whl
           python -m pytest -o pythonpath= -p no:warnings
       - uses: actions/upload-artifact@v4
         with:

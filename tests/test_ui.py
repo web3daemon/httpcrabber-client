@@ -167,18 +167,20 @@ def test_banner_shows_crab_only_when_it_fits(monkeypatch):
     assert "▀" in rendered(60)
 
 
-def test_ink_header_fits_and_prints_identity_once(monkeypatch):
+def test_ink_uses_original_banner_and_animation_sequence(monkeypatch):
     monkeypatch.setattr(ui, "MONO", True)
-    for width in (32, 80, 120):
-        c = Console(record=True, width=width, force_terminal=False)
-        monkeypatch.setattr(ui, "console", c)
-        ui.banner()
-        out = c.export_text()
-        assert out.count("HTTPCRABBER") == 1
-        assert out.count(f"v{ui.__version__}") == 1
-        assert " ".join(out.split()).count(ui.t("tagline")) == 1
-        assert len(out.strip().splitlines()) <= (4 if width == 32 else 2)
-        assert all(len(line) <= width for line in out.splitlines())
+    monkeypatch.setattr(ui.settings, "anim", True)
+    console = Console(record=True, width=120, force_terminal=False)
+    monkeypatch.setattr(ui, "console", console)
+    phases = []
+    monkeypatch.setattr(ui, "matrix_rain", lambda: phases.append("rain"))
+    monkeypatch.setattr(ui, "glitch_banner", lambda: phases.append("glitch"))
+    monkeypatch.setattr(ui, "typewriter", lambda text, style: phases.append(text))
+    ui.banner()
+    assert phases == ["rain", "glitch", ui.t("tagline")]
+    output = console.export_text()
+    for row in ui.BANNER.strip().splitlines():
+        assert row.strip() in output
 
 
 def test_summary_mentions_unpacked_sources():

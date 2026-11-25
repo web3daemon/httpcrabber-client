@@ -8,7 +8,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [1.5.1] — 2026-11-25
 
-- Ink now opens with a compact monochrome masthead. The name and version share one line and the localized description appears immediately below.
+- Ink restores the original ANSI Shadow lettering, matrix rain, glitch transition and typewriter caption from v1.4.0, rendered in grayscale. The banner adapts to terminal width and respects `--no-anim`.
 
 ## [1.5.0] — 2026-11-25
 

@@ -103,8 +103,7 @@ def shoot(name: str, title: str, draw, suffix: str = "") -> None:
 
 def start(c: Console) -> None:
     c.print(ui.banner_panel())
-    if not ui.MONO:
-        ui.typewriter(ui.t("tagline"), style=ui.MUTED)
+    ui.typewriter(ui.t("tagline"), style=ui.MUTED)
     c.print()
     ui.step(f"{ui.t('proxy_ok')} [{ui.CYAN}]socks5://user:****@1.2.3.4:1080[/]")
     c.print()

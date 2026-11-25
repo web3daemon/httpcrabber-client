@@ -281,20 +281,7 @@ def compact_banner() -> Text:
     return gradient_text("H T T P C R A B B E R")
 
 
-def ink_banner() -> Group:
-    label = Text.assemble((" HTTPCRABBER ", "bold #101010 on #eeeeee"),
-                          ("▓", "#cccccc"), ("▒", "#969696"), ("░", "#606060"))
-    line = Table.grid(expand=True, padding=(0, 1))
-    line.add_column(no_wrap=True)
-    line.add_column(ratio=1)
-    line.add_column(no_wrap=True, justify="right")
-    line.add_row(label, Rule(style="#555555"), Text(f"v{__version__}", style="#c2c2c2"))
-    return Group(line, Text(t("tagline"), style="#bdbdbd"))
-
-
-def banner_panel(fits: bool = True, noise: float = 0.0) -> RenderableType:
-    if MONO:
-        return ink_banner()
+def banner_panel(fits: bool = True, noise: float = 0.0) -> Panel:
     if fits and console.width >= _ART_WIDTH + CRAB_WIDTH + 14:
         # Широкий терминал — краб слева от арта
         art = Table.grid(padding=(0, 3))
@@ -305,7 +292,7 @@ def banner_panel(fits: bool = True, noise: float = 0.0) -> RenderableType:
         art = gradient_banner(noise)
     else:
         art = Group(Align.center(pixel_crab()), Text(""), Align.center(compact_banner()))
-    title = Text.assemble(" 🦀 ", ("httpcrabber", NEON), (f"  v{__version__} ", DIM))
+    title = Text.assemble(" ▪ " if MONO else " 🦀 ", ("httpcrabber", NEON), (f"  v{__version__} ", DIM))
     tags = Text.assemble(
         " ", ("http", CYAN), (" · ", DIM), ("websocket", MAG), (" · ", DIM),
         ("socks5", WARN), (" · ", DIM), ("js capture", NEON), " ",
@@ -318,14 +305,12 @@ def banner_panel(fits: bool = True, noise: float = 0.0) -> RenderableType:
 def banner() -> None:
     if settings.anim:
         console.clear()
-    if not MONO:
-        matrix_rain()
+    matrix_rain()
     fits = banner_fits()
-    if fits and not MONO:
+    if fits:
         glitch_banner()
     console.print(banner_panel(fits))
-    if not MONO:
-        typewriter(t("tagline"), style=MUTED)
+    typewriter(t("tagline"), style=MUTED)
     console.print()
 
 

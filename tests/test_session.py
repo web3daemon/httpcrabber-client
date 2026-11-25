@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import json
+import socket
 import threading
 import time
 import urllib.request
@@ -25,6 +26,16 @@ def test_unique_session_dir_never_overwrites(tmp_path):
     dirs = [unique_session_dir(tmp_path, "x") for _ in range(3)]
     assert [d.name for d in dirs] == ["x", "x_2", "x_3"]
     assert all(d.is_dir() for d in dirs)
+
+
+def test_occupied_default_ports_do_not_collide(monkeypatch):
+    with socket.socket() as busy:
+        busy.bind(("127.0.0.1", 0))
+        preferred = busy.getsockname()[1]
+        monkeypatch.setattr(session, "DEFAULT_PROXY_PORT", preferred)
+        monkeypatch.setattr(session, "DEFAULT_BRIDGE_PORT", preferred)
+        cfg = make_config("busy", None)
+        assert len({preferred, cfg.proxy_port, cfg.bridge_port}) == 3
 
 
 def test_make_config_layout():

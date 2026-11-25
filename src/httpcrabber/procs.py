@@ -31,20 +31,22 @@ def cleanup() -> None:
 atexit.register(cleanup)
 
 
-def free_port(preferred: int, span: int = 50) -> int:
+def free_port(preferred: int, span: int = 50, *, exclude: int | None = None) -> int:
     """preferred, если свободен, иначе первый свободный выше него.
 
     Проверяем через bind (мгновенно и надёжно), а не connect — connect к порту,
     который молча дропает SYN, может висеть на TCP-таймауте.
     """
-    for port in range(preferred, preferred + span):
+    for port in range(preferred, min(65536, preferred + span)):
+        if port == exclude:
+            continue
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             try:
                 s.bind(("127.0.0.1", port))
                 return port
             except OSError:
                 continue
-    return preferred
+    raise OSError(f"No free TCP port near {preferred}")
 
 
 def port_open(host: str, port: int, timeout: float = 0.5) -> bool:

@@ -281,34 +281,18 @@ def compact_banner() -> Text:
     return gradient_text("H T T P C R A B B E R")
 
 
-def ink_banner() -> Panel:
-    glyphs = {
-        "H": ("█ █", "█ █", "███", "█ █", "█ █"),
-        "T": ("███", " █ ", " █ ", " █ ", " █ "),
-        "P": ("██▌", "█ █", "██▘", "█  ", "█  "),
-        "C": ("▟██", "█  ", "█  ", "█  ", "▜██"),
-        "R": ("██▌", "█ █", "██▘", "█▌ ", "█ █"),
-        "A": ("▟█▙", "█ █", "███", "█ █", "█ █"),
-        "B": ("██▙", "█ █", "██▌", "█ █", "██▛"),
-        "E": ("███", "█  ", "██▌", "█  ", "███"),
-    }
-    word = Text("\n".join(" ".join(glyphs[ch][row] for ch in "HTTPCRABBER")
-                          for row in range(5)), style="bold #eeeeee")
-    if console.width >= 80:
-        art = Table.grid(padding=(0, 3))
-        art.add_column(vertical="middle")
-        art.add_row(pixel_crab(), word)
-    elif console.width >= 50:
-        art = word
-    else:
-        art = Text("HTTPCRABBER", style="bold #eeeeee")
-    return Panel(Align.center(art), title=Text(f" HTTPCRABBER  /  v{__version__} ",
-                 style="bold #101010 on #ededed"), title_align="left",
-                 box=box.HEAVY, border_style="#a0a0a0", style="#e5e5e5 on #101010",
-                 padding=(1, 2))
+def ink_banner() -> Group:
+    label = Text.assemble((" HTTPCRABBER ", "bold #101010 on #eeeeee"),
+                          ("▓", "#cccccc"), ("▒", "#969696"), ("░", "#606060"))
+    line = Table.grid(expand=True, padding=(0, 1))
+    line.add_column(no_wrap=True)
+    line.add_column(ratio=1)
+    line.add_column(no_wrap=True, justify="right")
+    line.add_row(label, Rule(style="#555555"), Text(f"v{__version__}", style="#c2c2c2"))
+    return Group(line, Text(t("tagline"), style="#bdbdbd"))
 
 
-def banner_panel(fits: bool = True, noise: float = 0.0) -> Panel:
+def banner_panel(fits: bool = True, noise: float = 0.0) -> RenderableType:
     if MONO:
         return ink_banner()
     if fits and console.width >= _ART_WIDTH + CRAB_WIDTH + 14:
@@ -340,7 +324,8 @@ def banner() -> None:
     if fits and not MONO:
         glitch_banner()
     console.print(banner_panel(fits))
-    typewriter(t("tagline"), style=MUTED)
+    if not MONO:
+        typewriter(t("tagline"), style=MUTED)
     console.print()
 
 

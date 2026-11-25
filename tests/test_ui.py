@@ -154,6 +154,7 @@ def test_pixel_crab_is_symmetric_and_fits():
 
 
 def test_banner_shows_crab_only_when_it_fits(monkeypatch):
+    monkeypatch.setattr(ui, "MONO", False)
     def rendered(width):
         monkeypatch.setattr(type(ui.console), "width", property(lambda self: width))
         c = Console(record=True, width=width, force_terminal=False)

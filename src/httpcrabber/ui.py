@@ -26,6 +26,7 @@ from httpcrabber.config import (
     GRADIENT,
     INK,
     MAG,
+    MONO,
     MUTED,
     NEON,
     WARN,
@@ -80,6 +81,9 @@ _CRAB_LEFT = (
 )
 PIXEL_CRAB = tuple(row + row[-2::-1] for row in _CRAB_LEFT)
 CRAB_COLORS = {"O": "#ff5a36", "H": "#ff9a6e", "D": "#b8321b", "W": "#ffffff", "K": "#0b0f0c"}
+if MONO:
+    CRAB_COLORS = {"O": "#cccccc", "H": "#ffffff", "D": "#727272", "W": "#eeeeee", "K": "#101010"}
+    _RAIN_SHADES = ["#252525", "#4a4a4a", "#777777", "#999999", "#c2c2c2", "#f4f4f4"]
 CRAB_WIDTH = len(PIXEL_CRAB[0])
 
 
@@ -277,7 +281,36 @@ def compact_banner() -> Text:
     return gradient_text("H T T P C R A B B E R")
 
 
+def ink_banner() -> Panel:
+    glyphs = {
+        "H": ("█ █", "█ █", "███", "█ █", "█ █"),
+        "T": ("███", " █ ", " █ ", " █ ", " █ "),
+        "P": ("██▌", "█ █", "██▘", "█  ", "█  "),
+        "C": ("▟██", "█  ", "█  ", "█  ", "▜██"),
+        "R": ("██▌", "█ █", "██▘", "█▌ ", "█ █"),
+        "A": ("▟█▙", "█ █", "███", "█ █", "█ █"),
+        "B": ("██▙", "█ █", "██▌", "█ █", "██▛"),
+        "E": ("███", "█  ", "██▌", "█  ", "███"),
+    }
+    word = Text("\n".join(" ".join(glyphs[ch][row] for ch in "HTTPCRABBER")
+                          for row in range(5)), style="bold #eeeeee")
+    if console.width >= 80:
+        art = Table.grid(padding=(0, 3))
+        art.add_column(vertical="middle")
+        art.add_row(pixel_crab(), word)
+    elif console.width >= 50:
+        art = word
+    else:
+        art = Text("HTTPCRABBER", style="bold #eeeeee")
+    return Panel(Align.center(art), title=Text(f" HTTPCRABBER  /  v{__version__} ",
+                 style="bold #101010 on #ededed"), title_align="left",
+                 box=box.HEAVY, border_style="#a0a0a0", style="#e5e5e5 on #101010",
+                 padding=(1, 2))
+
+
 def banner_panel(fits: bool = True, noise: float = 0.0) -> Panel:
+    if MONO:
+        return ink_banner()
     if fits and console.width >= _ART_WIDTH + CRAB_WIDTH + 14:
         # Широкий терминал — краб слева от арта
         art = Table.grid(padding=(0, 3))
@@ -301,9 +334,10 @@ def banner_panel(fits: bool = True, noise: float = 0.0) -> Panel:
 def banner() -> None:
     if settings.anim:
         console.clear()
-    matrix_rain()
+    if not MONO:
+        matrix_rain()
     fits = banner_fits()
-    if fits:
+    if fits and not MONO:
         glitch_banner()
     console.print(banner_panel(fits))
     typewriter(t("tagline"), style=MUTED)
@@ -388,8 +422,12 @@ def brief_panel(cfg) -> Panel:
         (t("b_browser"),
          t("browser_auto") if cfg.launch_browser
          else f"[{WARN}]{t('browser_manual', port=cfg.proxy_port)}[/]"),
+        (t("b_limit"), f"{cfg.max_body:,} {t('unit_bytes')}"),
+        (t("b_binary"), "base64" if cfg.binary_bodies else t("placeholder")),
         (t("b_output"), f"[{MUTED}]{cfg.session_dir}[/]"),
     ]
+    if cfg.launch_browser:
+        rows.extend([(t("b_profile"), Text(str(cfg.profile_dir))), (t("b_locale"), cfg.locale)])
     include, exclude = getattr(cfg, "include", []), getattr(cfg, "exclude", [])
     if include or exclude:
         scope = " ".join([f"[{NEON}]+{p}[/]" for p in include] + [f"[{ERR}]-{p}[/]" for p in exclude])
@@ -478,7 +516,7 @@ def render_live(cfg, logger, start_ts: float, rate: deque, frame: int) -> Panel:
 
     # REC мигает раз в полсекунды — видно, что сессия жива, даже без трафика.
     rec_on = not settings.anim or (frame // 6) % 2 == 0
-    title = Text.assemble(" 🦀 ", (t("live_title"), NEON), "  ",
+    title = Text.assemble(" ▪ " if MONO else " 🦀 ", (t("live_title"), NEON), "  ",
                           ("● REC", ERR if rec_on else DIM), " ")
     hint = t("live_hint") if cfg.launch_browser else t("live_hint_manual")
     body = Group(head, Text(""), feed_rule, cols, render_feed(logger, FEED_ROWS, width),
@@ -526,7 +564,7 @@ def summary_panel(cfg, logger, duration: float) -> RenderableType:
         (s["request"], t("l_req"), CYAN), (s["response"], t("l_resp"), NEON),
         (s["ws"], t("l_ws"), MAG), (s["js"], t("l_js"), WARN),
         (s["error"], t("l_err"), ERR if s["error"] else DIM),
-        (fmt_clock(duration), t("s_duration"), "bold #e8f0e8"),
+        (fmt_clock(duration), t("s_duration"), "bold #e8e8e8"),
     ]
     for _ in cells:
         tiles.add_column(ratio=1, no_wrap=True, overflow="ellipsis")

@@ -34,7 +34,7 @@ from textual.widgets import (
 )
 
 from httpcrabber import export, ui
-from httpcrabber.config import CYAN, DIM, ERR, MAG, NEON, WARN
+from httpcrabber.config import CYAN, DIM, ERR, MAG, MONO, NEON, WARN
 from httpcrabber.dump import Exchange, body_text, is_truncated, load
 from httpcrabber.replay import ReplayResult, replay
 
@@ -52,6 +52,12 @@ THEME = Theme(
     panel="#172019",
     dark=True,
 )
+
+if MONO:
+    THEME = Theme(name="httpcrabber", primary="#eeeeee", secondary="#cccccc",
+                  accent="#ffffff", warning="#c8c8c8", error="#ffffff", success="#cccccc",
+                  foreground="#eeeeee", background="#101010", surface="#181818", panel="#303030",
+                  dark=True)
 
 # ── фильтр ───────────────────────────────────────────────────────────────────
 
@@ -116,7 +122,7 @@ def render_body(body: object, mime: str) -> RenderableType:
         lexer = "javascript"
     if len(text) > 200_000:
         text = text[:200_000] + "\n…"
-    content = Syntax(text, lexer, theme="monokai", word_wrap=True, background_color="default") \
+    content = Syntax(text, lexer, theme="bw" if MONO else "monokai", word_wrap=True, background_color="default") \
         if lexer else Text(text)
     return Group(content, *([note] if note else []))
 
@@ -144,7 +150,7 @@ def _url_cell(host: str, path: str, width: int = 40) -> Text:
     host = host if len(host) <= 24 else "…" + host[-23:]
     room = max(8, width - len(host))
     path = path if len(path) <= room else path[: room - 1] + "…"
-    return Text.assemble((host, "bold"), (path, "#9aa89a"))
+    return Text.assemble((host, "bold"), (path, "#999999" if MONO else "#9aa89a"))
 
 
 def _status_text(status, reason: str = "") -> Text:
@@ -353,7 +359,7 @@ class BrowseApp(App):
         self.query_one("#resp", Static).update(render_response(ex))
         self.query_one("#ws", Static).update(render_ws(ex))
         self.query_one("#curl", Static).update(
-            Syntax(export.to_curl(ex, self.shell), "bash", theme="monokai", word_wrap=True,
+            Syntax(export.to_curl(ex, self.shell), "bash", theme="bw" if MONO else "monokai", word_wrap=True,
                    background_color="default"))
         self.query_one("#replay", Static).update(render_replay(ex, self.replays.get(ex.id)))
 

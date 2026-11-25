@@ -7,7 +7,7 @@
 Снимает трафик на уровне сети и сохраняет всё на диск — без расширений и внедрённого кода, страница работает как есть.
 
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
-[![Релиз v1.4.0](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
+[![Релиз v1.5.0](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
 [![Python 3.11+](assets/badge-python.svg)](https://www.python.org/)
 [![Платформы Windows · macOS · Linux](assets/badge-platform.svg)](#требования)
 [![Лицензия GPL-3.0](assets/badge-license.svg)](LICENSE)
@@ -30,7 +30,7 @@ pipx install httpcrabber          # или: pip install httpcrabber внутри
 httpcrabber
 ```
 
-Ответь на три вопроса, пользуйся браузером как обычно, закрой Chrome — все запросы, ответы, WebSocket-кадры и скрипты сессии лежат в `LOGS/<имя>/`.
+Выбери параметры записи, пользуйся браузером как обычно, закрой Chrome — все запросы, ответы, WebSocket-кадры и скрипты сессии лежат в `LOGS/<имя>/`.
 
 ## Зачем
 
@@ -64,7 +64,7 @@ DevTools хороши, чтобы быстро посмотреть, но как
 | 🔐 **Автонастройка CA** | Сертификат проверяется и ставится при первом запуске — на Windows, macOS и Linux |
 | ⌨️ **Скриптуется** | У каждого вопроса есть флаг; передай все — и ничего не спросит |
 | ⏹ **Безопасное завершение** | Закрытие Chrome *или* `Ctrl+C` — дамп сохранён, дочерние процессы погашены в обоих случаях |
-| 🌍 **Двуязычный интерфейс** | Русский и английский, выбор при старте или через `--lang` |
+| 🌍 **Язык и тема** | Поиск региона Chrome, русский, польский и английский интерфейс записи, сохранение темы Neon или Ink |
 
 ## Требования
 
@@ -108,11 +108,13 @@ pip install -e ".[dev]"
 httpcrabber
 ```
 
-Инструмент спросит три вещи, остальное сделает сам:
+При старте выбери параметры записи.
 
-1. **Язык** — русский или английский
+1. **Язык** — поиск по языку и стране
 2. **Upstream-прокси** — вставь в любом формате или нажми <kbd>Enter</kbd> для прямого соединения
 3. **Название сессии** — например `TARGET RECON`
+4. **Лимит тела** — нажми Enter для 200 000 байт или введи свой размер, например `20MB`.
+5. **Профиль Chrome** — выбери из списка или создай новый.
 
 <p align="center">
   <img src="assets/screen-start.ru.svg" alt="Старт httpcrabber: баннер, бриф сессии, статусы" width="100%">
@@ -127,6 +129,26 @@ WebSocket-кадр и скрипт будут сохранены. Закрой C
   <img src="assets/screen-summary.ru.svg" alt="Итоговая сводка сессии httpcrabber" width="100%">
 </p>
 
+### Профили, лимит тела и темы
+
+```powershell
+httpcrabber --lang ru --session yt_fresh --profile yt_fresh --max-body 20MB --binary-bodies --direct --output 'D:\Projects\pypitest\LOGS'
+httpcrabber profiles list
+httpcrabber profiles use yt_fresh
+httpcrabber regions Польша
+httpcrabber theme ink
+```
+
+`--profile ИМЯ` создаёт профиль в `~/.httpcrabber/profiles` и открывает его при последующих запусках из любой папки. У каждой записи свой каталог логов. Для профиля версии 1.4 укажи `--profile-dir 'D:\Projects\pypitest\yt_fresh_work\chrome_profile_proxy'`. При запуске без флага используется профиль из `profiles use`, затем существующий `./chrome_profile_proxy`, затем именованный `default`.
+
+`--max-body` принимает байты, `20MB`, `2MiB` или `default` (200 000 байт). Текст считается в UTF-8. Ключи `--binary-bodies` и `--no-binary-bodies` включают и выключают запись небольших бинарных тел в base64. Более крупные получают пометку с размером. Флаги имеют приоритет над `HTTPCRABBER_MAX_BODY` и `HTTPCRABBER_BINARY_BODIES`. Добавь `--setup`, чтобы открыть мастер при полностью заданной команде.
+
+При первом интерактивном запуске без аргументов выбери **Neon** или **Ink**. Для переключения используй `httpcrabber theme` или `--theme ink`. Выбор сохраняется в `~/.httpcrabber/theme`.
+
+![Монохромная тема Ink](assets/screen-ink.svg)
+
+На PyPI доступны скомпилированные wheel-пакеты для обычного CPython 3.11+ на Windows x64, Linux (glibc) x64/ARM64 и macOS Intel/Apple Silicon. Исходники каждого релиза доступны в Git по тегу версии.
+
 ## Командная строка
 
 У каждого вопроса есть флаг. Передай все — и httpcrabber ничего не спросит, удобно для скриптов.
@@ -140,7 +162,7 @@ httpcrabber -s api --include '*.target.com' --sourcemaps  # только цел�
 
 | Флаг | Значение |
 |---|---|
-| `-l, --lang {ru,en}` | Язык интерфейса |
+| `-l, --lang TAG` | Язык и регион Chrome. Интерфейс записи поддерживает ru, pl и en. Для остальных локалей используется английский. |
 | `-s, --session NAME` | Название сессии → `LOGS/<name>/` |
 | `-p, --proxy PROXY` | Upstream-прокси в любом [формате](#форматы-прокси) |
 | `--direct` | Без upstream-прокси |

@@ -1,12 +1,13 @@
 """Константы, палитра и изменяемые настройки времени выполнения."""
 
 import contextlib
-import os
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from rich.console import Console
+
+from httpcrabber.launcher import saved_theme
 
 APP_NAME = "httpcrabber"
 REPO_URL = "https://github.com/web3daemon/httpcrabber-client"
@@ -18,12 +19,12 @@ CONFDIR = Path.home() / ".mitmproxy"
 # Тела в .jsonl режутся по этой границе (скрипты в js/ — всегда целиком).
 # Переопределяется через HTTPCRABBER_MAX_BODY: тяжёлые HTML/JSON-ответы (например,
 # залогиненный x.com/home или таймлайны) не влезают в 200 КБ.
-MAX_BODY_SIZE = int(os.environ.get("HTTPCRABBER_MAX_BODY", 200_000))
+MAX_BODY_SIZE = 200_000
 
 # Бинарные тела по умолчанию заменяются плейсхолдером [binary, N bytes].
 # С HTTPCRABBER_BINARY_BODIES=1 тело <= MAX_BODY_SIZE сохраняется в дампе как
 # base64 (поле body: {"encoding":"base64", ...}) — иначе такие payload'ы теряются.
-CAPTURE_BINARY = os.environ.get("HTTPCRABBER_BINARY_BODIES", "").lower() in ("1", "true", "yes")
+CAPTURE_BINARY = False
 
 DEFAULT_PROXY_PORT = 8080      # слушает mitmproxy (в него ходит браузер)
 DEFAULT_BRIDGE_PORT = 8081     # локальный мост pproxy (в него ходит mitmproxy)
@@ -44,6 +45,14 @@ INK = "#07110a"     # тёмный текст на ярких плашках-б�
 GRADIENT = ["#39ff14", "#33f56a", "#1fe9b8", "#00e5ff", "#7f8cff", "#ff2fd0"]
 
 
+MONO = saved_theme() == "ink"
+if MONO:
+    NEON, CYAN, MAG = "bold #fafafa", "bold #dedede", "bold #c2c2c2"
+    DIM, MUTED, FAINT, INK = "#929292", "#bdbdbd", "#4a4a4a", "#101010"
+    WARN, ERR = "bold #d0d0d0", "bold underline #ffffff"
+    GRADIENT = ["#fafafa", "#dedede", "#f4f4f4", "#a0a0a0"]
+
+
 @dataclass
 class Settings:
     """Настройки, которые выставляет CLI и читают остальные модули."""
@@ -62,4 +71,4 @@ if sys.platform == "win32":
         with contextlib.suppress(Exception):
             _stream.reconfigure(encoding="utf-8")
 
-console = Console()
+console = Console(style="#e5e5e5 on #101010" if MONO else None, highlight=not MONO)

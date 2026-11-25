@@ -7,7 +7,7 @@
 Captura en la red y guarda todo en disco: sin extensiones ni código inyectado, la página funciona tal cual.
 
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
-[![Versión v1.4.0](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
+[![Versión v1.5.0](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
 [![Python 3.11+](assets/badge-python.svg)](https://www.python.org/)
 [![Plataformas Windows · macOS · Linux](assets/badge-platform.svg)](#requisitos)
 [![Licencia GPL-3.0](assets/badge-license.svg)](LICENSE)
@@ -30,7 +30,7 @@ pipx install httpcrabber          # o: pip install httpcrabber dentro de un venv
 httpcrabber
 ```
 
-Responde tres preguntas, navega con normalidad y cierra Chrome: cada petición, respuesta, trama WebSocket y script de la sesión queda en `LOGS/<nombre>/`.
+Elige los ajustes, navega con normalidad y cierra Chrome: cada petición, respuesta, trama WebSocket y script de la sesión queda en `LOGS/<nombre>/`.
 
 ## Por qué
 
@@ -65,7 +65,7 @@ navegador o dispositivo que pueda usar un proxy.
 | 🔐 **Configuración automática de CA** | El certificado se comprueba e instala en el primer arranque, en Windows, macOS y Linux |
 | ⌨️ **Automatizable** | Cada pregunta tiene su flag; pásalos todos y no se pregunta nada |
 | ⏹ **Cierre seguro** | Termina al cerrar Chrome *o* con `Ctrl+C`: el volcado se guarda y los procesos hijos se limpian igualmente |
-| 🌍 **Interfaz bilingüe** | Ruso e inglés, elegido al inicio o con `--lang` |
+| 🌍 **Interfaz multilingüe** | Ruso, inglés y polaco, elegido al inicio o con `--lang` |
 
 ## Requisitos
 
@@ -109,11 +109,13 @@ pip install -e ".[dev]"
 httpcrabber
 ```
 
-La herramienta pide tres cosas y se encarga del resto:
+Elige los ajustes de la sesión:
 
-1. **Idioma** — ruso o inglés
+1. **Idioma** — busca el idioma y la región
 2. **Proxy upstream** — pégalo en cualquier formato, o pulsa <kbd>Enter</kbd> para conexión directa
 3. **Nombre de sesión** — por ejemplo `TARGET RECON`
+4. **Límite del cuerpo** — acepta 200 000 bytes o escribe `20MB`.
+5. **Perfil de Chrome** — elige uno existente o crea otro.
 
 <p align="center">
   <img src="assets/screen-start.svg" alt="Arranque de httpcrabber: banner, resumen de sesión, estados" width="100%">
@@ -141,7 +143,10 @@ httpcrabber -s api --include '*.target.com' --sourcemaps  # solo el objetivo + f
 
 | Flag | Significado |
 |---|---|
-| `-l, --lang {ru,en}` | Idioma de la interfaz |
+| `-l, --lang TAG` | Idioma y región de Chrome. Interfaz de captura en ruso, polaco o inglés. |
+| `--profile NOMBRE`, `--profile-dir RUTA` | Perfil persistente o carpeta existente |
+| `--max-body 20MB`, `--binary-bodies` | Límite del cuerpo y captura binaria |
+| `--theme ink` | Guarda el tema monocromo. `httpcrabber theme neon` restaura Neon. |
 | `-s, --session NAME` | Nombre de sesión → `LOGS/<name>/` |
 | `-p, --proxy PROXY` | Proxy upstream en cualquier [formato](#formatos-de-proxy) |
 | `--direct` | Sin proxy upstream |

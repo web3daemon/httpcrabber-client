@@ -7,7 +7,7 @@
 Captures on the wire and saves everything to disk — no extensions, no injected code, the page runs untouched.
 
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
-[![Release v1.4.0](https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
+[![Release v1.5.0](https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
 [![Python 3.11+](https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/badge-python.svg)](https://www.python.org/)
 [![Platform Windows · macOS · Linux](https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/badge-platform.svg)](#requirements)
 [![License GPL-3.0](https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/badge-license.svg)](https://github.com/web3daemon/httpcrabber-client/blob/main/LICENSE)
@@ -30,7 +30,7 @@ pipx install httpcrabber          # or: pip install httpcrabber inside a venv
 httpcrabber
 ```
 
-Answer three prompts, browse as usual, close Chrome — every request, response, WebSocket frame and script of the session is in `LOGS/<name>/`.
+Choose your launch settings, browse as usual, close Chrome — every request, response, WebSocket frame and script of the session is in `LOGS/<name>/`.
 
 ## Why
 
@@ -64,7 +64,7 @@ can use a proxy works.
 | 🔐 **Automatic CA setup** | Certificate checked and installed on first run, on Windows, macOS and Linux |
 | ⌨️ **Scriptable** | Every prompt has a flag; pass them all and nothing is asked |
 | ⏹ **Safe shutdown** | Ends on Chrome close *or* `Ctrl+C` — the dump is saved and child processes are cleaned up either way |
-| 🌍 **Bilingual UI** | Russian and English, chosen at startup or with `--lang` |
+| 🌍 **Language and appearance** | Search Chrome locales, use the session UI in English, Polish or Russian, and save a Neon or Ink theme |
 
 ## Requirements
 
@@ -108,11 +108,13 @@ No install at all? `python run.py` works straight from the clone.
 httpcrabber
 ```
 
-The tool asks for three things and handles the rest:
+Choose the settings for your recording.
 
-1. **Language** — Russian or English
+1. **Language** — search by language or country
 2. **Upstream proxy** — paste it in any format, or press <kbd>Enter</kbd> to go direct
 3. **Session name** — e.g. `TARGET RECON`
+4. **Body limit** — accept 200,000 bytes or enter a size such as `20MB`.
+5. **Chrome profile** — choose an existing profile or create a new one.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/screen-start.svg" alt="httpcrabber startup: banner, session brief, status lines" width="100%">
@@ -127,6 +129,26 @@ to finish; you get an analytics panel and the folder path.
   <img src="https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/screen-summary.svg" alt="httpcrabber session summary" width="100%">
 </p>
 
+### Profiles, body limits and themes
+
+```powershell
+httpcrabber --lang ru --session yt_fresh --profile yt_fresh --max-body 20MB --binary-bodies --direct --output 'D:\Projects\pypitest\LOGS'
+httpcrabber profiles list
+httpcrabber profiles use yt_fresh
+httpcrabber regions Poland
+httpcrabber theme ink
+```
+
+`--profile NAME` creates or reuses a profile in `~/.httpcrabber/profiles`. Select a different name to switch. Each recording still gets its own output folder. Use `--profile-dir PATH` to reuse a 1.4 Chrome user-data directory. With no selection, an existing `./chrome_profile_proxy` takes precedence over the managed `default` profile. A saved selection from `profiles use` takes precedence over both.
+
+`--max-body` accepts bytes, decimal units such as `20MB`, binary units such as `2MiB`, and `default` (200,000 bytes). `--binary-bodies` and `--no-binary-bodies` override `HTTPCRABBER_BINARY_BODIES`. An explicit limit overrides `HTTPCRABBER_MAX_BODY`. Text uses its UTF-8 size and larger binary bodies keep a size marker. Use `--setup` to show the launch settings even with a complete command line.
+
+On the first interactive launch without arguments, choose **Neon** or **Ink**. Switch later with `httpcrabber theme` or `--theme ink`. The preference is stored in `~/.httpcrabber/theme`.
+
+![Ink terminal theme](https://raw.githubusercontent.com/web3daemon/httpcrabber-client/main/assets/screen-ink.svg)
+
+PyPI ships compiled wheels for standard CPython 3.11+ on Windows x64, Linux (glibc) x64/ARM64 and macOS Intel/Apple Silicon. For other targets, the source for each release is available under its Git tag.
+
 ## Command line
 
 Every prompt has a flag. Pass them all and httpcrabber asks nothing — handy for scripts.
@@ -140,7 +162,7 @@ httpcrabber -s api --include '*.target.com' --sourcemaps  # only the target + or
 
 | Flag | Meaning |
 |---|---|
-| `-l, --lang {ru,en}` | Interface language |
+| `-l, --lang TAG` | Chrome locale. The session UI supports en, ru and pl, with English for other locales. |
 | `-s, --session NAME` | Session name → `LOGS/<name>/` |
 | `-p, --proxy PROXY` | Upstream proxy, any [format](#proxy-formats) |
 | `--direct` | No upstream proxy |

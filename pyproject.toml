@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=77", "wheel"]
+requires = ["setuptools>=77", "wheel", "Cython>=3.2,<4"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -33,7 +33,8 @@ classifiers = [
 dependencies = [
     "mitmproxy>=11.0",
     "rich>=13.0",
-    "questionary>=2.0",
+    "filelock>=3.13",
+    "questionary>=2.1",
     "pproxy>=2.7",
     "textual>=1.0",
 ]
@@ -48,7 +49,10 @@ Issues = "https://github.com/web3daemon/httpcrabber-client/issues"
 Changelog = "https://github.com/web3daemon/httpcrabber-client/blob/main/CHANGELOG.md"
 
 [project.scripts]
-httpcrabber = "httpcrabber.cli:main"
+httpcrabber = "httpcrabber.launcher:main"
+
+[tool.setuptools]
+include-package-data = false
 
 [tool.setuptools.packages.find]
 where = ["src"]

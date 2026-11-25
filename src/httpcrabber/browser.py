@@ -42,7 +42,7 @@ def find_browser() -> str | None:
     return next((c for c in candidates if c and Path(c).is_file()), None)
 
 
-def launch(proxy_port: int, profile_dir: Path = PROFILE_DIR) -> subprocess.Popen | None:
+def launch(proxy_port: int, profile_dir: Path = PROFILE_DIR, locale: str = "en-US") -> subprocess.Popen | None:
     exe = find_browser()
     if not exe:
         return None
@@ -51,6 +51,8 @@ def launch(proxy_port: int, profile_dir: Path = PROFILE_DIR) -> subprocess.Popen
         exe,
         f"--proxy-server=http://127.0.0.1:{proxy_port}",
         f"--user-data-dir={profile_dir.resolve()}",
+        f"--lang={locale}",
+        f"--accept-lang={locale},{locale.split('-')[0]}",
         "--no-first-run",
         "--no-default-browser-check",
         "--start-maximized",

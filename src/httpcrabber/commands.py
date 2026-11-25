@@ -6,8 +6,13 @@ from pathlib import Path
 
 from httpcrabber import ui
 from httpcrabber.config import CYAN, ERR, MAG, console
+from httpcrabber.profiles import profiles_main
+from httpcrabber.regions import regions_main
 
-HELP = """commands (work on a recorded session — folder LOGS/<name> or its .jsonl):
+HELP = """commands:
+  httpcrabber theme [ink|neon]                      choose and save the terminal theme
+  httpcrabber profiles [list|create NAME|use NAME]   manage persistent Chrome profiles
+  httpcrabber regions [QUERY]                       find a browser language and region
   httpcrabber ls [DIR]               saved sessions, newest first (default ./LOGS)
   httpcrabber browse [SESSION]       explore a session in the terminal, replay requests
   httpcrabber export har SESSION     HAR 1.2 for DevTools, Charles, Insomnia, Burp
@@ -177,5 +182,5 @@ def browse_main(argv: list[str]) -> int:
     return 0
 
 
-COMMANDS = {"redact": redact_main, "export": export_main, "openapi": openapi_main,
+COMMANDS = {"profiles": profiles_main, "regions": regions_main, "redact": redact_main, "export": export_main, "openapi": openapi_main,
             "ls": ls_main, "browse": browse_main, "show": browse_main}

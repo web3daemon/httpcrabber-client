@@ -9,14 +9,23 @@ from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from filelock import FileLock, Timeout
 from mitmproxy import options
 from mitmproxy.tools.dump import DumpMaster
 from rich.live import Live
 
-from httpcrabber import browser, ca, procs, sourcemaps, ui
+from httpcrabber import browser, ca, procs, profiles, sourcemaps, ui
 from httpcrabber.bridge import start_bridge
 from httpcrabber.capture import NetworkLogger, Scope
-from httpcrabber.config import DEFAULT_BRIDGE_PORT, DEFAULT_PROXY_PORT, WARN, console, settings
+from httpcrabber.config import (
+    CAPTURE_BINARY,
+    DEFAULT_BRIDGE_PORT,
+    DEFAULT_PROXY_PORT,
+    MAX_BODY_SIZE,
+    WARN,
+    console,
+    settings,
+)
 from httpcrabber.i18n import t
 from httpcrabber.proxy import Proxy
 
@@ -31,6 +40,10 @@ class SessionConfig:
     proxy_port: int
     bridge_port: int
     launch_browser: bool = True
+    max_body: int = MAX_BODY_SIZE
+    binary_bodies: bool = CAPTURE_BINARY
+    locale: str = "en-US"
+    profile_dir: Path = field(default_factory=profiles.preferred)
     include: list[str] = field(default_factory=list)   # glob-шаблоны хостов
     exclude: list[str] = field(default_factory=list)
     sourcemaps: bool = False                           # докачивать .map самим
@@ -46,16 +59,20 @@ def unique_session_dir(base: Path, slug: str) -> Path:
     base.mkdir(parents=True, exist_ok=True)
     path = base / slug
     n = 2
-    while path.exists():
-        path = base / f"{slug}_{n}"
-        n += 1
-    path.mkdir(parents=True)
-    return path
+    while True:
+        try:
+            path.mkdir()
+            return path
+        except FileExistsError:
+            path = base / f"{slug}_{n}"
+            n += 1
 
 
 def make_config(name: str, proxy: Proxy | None, *, launch_browser: bool = True,
                 port: int | None = None, include=(), exclude=(),
-                fetch_sourcemaps: bool = False) -> SessionConfig:
+                fetch_sourcemaps: bool = False, max_body: int = MAX_BODY_SIZE,
+                binary_bodies: bool = CAPTURE_BINARY, locale: str = "en-US",
+                profile_dir: Path | None = None) -> SessionConfig:
     slug = sanitize_session(name)
     session_dir = unique_session_dir(settings.log_dir, slug)
     proxy_port = procs.free_port(port or DEFAULT_PROXY_PORT)
@@ -72,6 +89,8 @@ def make_config(name: str, proxy: Proxy | None, *, launch_browser: bool = True,
         include=list(include),
         exclude=list(exclude),
         sourcemaps=fetch_sourcemaps,
+        max_body=max_body, binary_bodies=binary_bodies, locale=locale,
+        profile_dir=profile_dir if profile_dir is not None else profiles.preferred(),
     )
 
 
@@ -83,6 +102,18 @@ def _terminate(*procs_: subprocess.Popen | None) -> None:
 
 
 async def run_session(cfg: SessionConfig) -> NetworkLogger | None:
+    if not cfg.launch_browser:
+        return await _run_session(cfg)
+    cfg.profile_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        with FileLock(cfg.profile_dir / ".httpcrabber.lock", timeout=0):
+            return await _run_session(cfg)
+    except Timeout:
+        console.print(t("profile_busy", path=cfg.profile_dir), style=WARN, markup=False)
+        return None
+
+
+async def _run_session(cfg: SessionConfig) -> NetworkLogger | None:
     """Поднимает мост, mitmproxy, CA и браузер; крутит живую панель до конца сессии.
 
     Возвращает логгер со статистикой или None, если старт не удался.
@@ -107,7 +138,7 @@ async def run_session(cfg: SessionConfig) -> NetworkLogger | None:
     master = DumpMaster(opts, with_termlog=False, with_dumper=False)
     fetcher = sourcemaps.Fetcher(cfg.proxy_port) if cfg.sourcemaps else None
     logger = NetworkLogger(cfg.log_path, cfg.js_dir, scope=Scope(cfg.include, cfg.exclude),
-                           fetcher=fetcher)
+                           fetcher=fetcher, max_body=cfg.max_body, binary_bodies=cfg.binary_bodies)
     master.addons.add(logger)
     ui.step(t("mitm_start", port=cfg.proxy_port))
 
@@ -128,7 +159,7 @@ async def run_session(cfg: SessionConfig) -> NetworkLogger | None:
 
     # 4) браузер
     if cfg.launch_browser:
-        chrome_proc = browser.launch(cfg.proxy_port)
+        chrome_proc = browser.launch(cfg.proxy_port, cfg.profile_dir, cfg.locale)
         ui.step(t("chrome_start") if chrome_proc else t("chrome_none"),
                 "ok" if chrome_proc else "fail")
     else:

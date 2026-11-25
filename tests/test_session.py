@@ -105,7 +105,7 @@ def test_run_session_end_to_end(origin, monkeypatch):
     monkeypatch.setattr(ca, "is_installed", lambda: True)
     monkeypatch.setattr(ca, "cert_path", lambda: None)
     fake = _FakeBrowser(ttl=4.5)
-    monkeypatch.setattr(browser, "launch", lambda port: fake)
+    monkeypatch.setattr(browser, "launch", lambda port, profile_dir, locale: fake)
 
     cfg = make_config("E2E", None)
 
@@ -138,7 +138,7 @@ def test_run_session_through_bridge(origin, monkeypatch):
 
     monkeypatch.setattr(ca, "is_installed", lambda: True)
     monkeypatch.setattr(ca, "cert_path", lambda: None)
-    monkeypatch.setattr(browser, "launch", lambda port: _FakeBrowser(ttl=4.5))
+    monkeypatch.setattr(browser, "launch", lambda port, profile_dir, locale: _FakeBrowser(ttl=4.5))
 
     up_port = procs.free_port(9500)
     upstream = subprocess.Popen(
@@ -170,7 +170,7 @@ def test_run_session_fetches_sourcemaps_and_filters_hosts(origin, monkeypatch):
     """--sourcemaps: карту, на которую ссылается скрипт, докачиваем через свой mitmproxy."""
     monkeypatch.setattr(ca, "is_installed", lambda: True)
     monkeypatch.setattr(ca, "cert_path", lambda: None)
-    monkeypatch.setattr(browser, "launch", lambda port: _FakeBrowser(ttl=5))
+    monkeypatch.setattr(browser, "launch", lambda port, profile_dir, locale: _FakeBrowser(ttl=5))
 
     cfg = make_config("MAPS", None, fetch_sourcemaps=True, exclude=["localhost"])
 

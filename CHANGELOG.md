@@ -6,6 +6,14 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.5.0] — 2026-11-25
+
+- Choose the JSONL body limit at startup or pass `--max-body 20MB`. Binary recording can be toggled with `--[no-]binary-bodies`. Both environment overrides remain supported.
+- Create and switch persistent Chrome profiles with `--profile` and `profiles list/create/use`. Reuse a 1.4 user-data directory with `--profile-dir`.
+- Search 16 Chrome locales by language or region. `--lang PL` selects Polish for the recording interface and pl-PL for Chrome. Russian and English interfaces are also included.
+- Choose the Neon theme or the high-contrast monochrome Ink theme. The selection persists across launches and applies to the session browser.
+- PyPI distributes native stable-ABI wheels for Windows x64, macOS Intel/Apple Silicon and glibc Linux x64/ARM64. The matching source remains on GitHub under GPL-3.0-or-later.
+
 ## [1.4.0] — 2026-09-24
 
 A workbench for recorded sessions. Recording is unchanged.
@@ -156,7 +164,8 @@ First public release.
 - Free-port detection uses `bind` instead of `connect`, which could hang on filtered ports.
 - Hard `Ctrl+C` on Windows no longer leaves Chrome or the pproxy bridge running.
 
-[Unreleased]: https://github.com/web3daemon/httpcrabber-client/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/web3daemon/httpcrabber-client/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/web3daemon/httpcrabber-client/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/web3daemon/httpcrabber-client/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/web3daemon/httpcrabber-client/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/web3daemon/httpcrabber-client/compare/v1.2.0...v1.2.1

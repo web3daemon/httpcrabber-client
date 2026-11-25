@@ -21,12 +21,6 @@ from httpcrabber.config import CAPTURE_BINARY, MAX_BODY_SIZE
 _TEXTUAL = ("json", "text", "javascript", "xml", "html", "x-www-form")
 
 
-def _truncate(text: str) -> str:
-    if len(text) > MAX_BODY_SIZE:
-        return text[:MAX_BODY_SIZE] + "...[TRUNCATED]"
-    return text
-
-
 def _host_dir(url: str) -> str:
     return re.sub(r"[^\w.\-]", "_", urlsplit(url).netloc) or "unknown"
 
@@ -40,13 +34,13 @@ def _headers(headers) -> dict:
     return {"headers": dict(headers), "headers_raw": [list(kv) for kv in headers.items(multi=True)]}
 
 
-def _binary_body(content: bytes, ct: str = ""):
+def _binary_body(content: bytes, ct: str, limit: int, enabled: bool):
     """Плейсхолдер для бинарного тела, либо base64 при CAPTURE_BINARY.
 
     Кодируем только тела <= MAX_BODY_SIZE — обрезанный base64 не декодируется.
     """
     label = f"[binary, {len(content)} bytes{f', {ct}' if ct else ''}]"
-    if not CAPTURE_BINARY or len(content) > MAX_BODY_SIZE:
+    if not enabled or len(content) > limit:
         return label
     return {
         "encoding": "base64",
@@ -240,7 +234,10 @@ class NetworkLogger:
     """
 
     def __init__(self, path: Path, js_dir: Path | None = None, *, scope: Scope | None = None,
-                 fetcher: sourcemaps.Fetcher | None = None):
+                 fetcher: sourcemaps.Fetcher | None = None, max_body: int = MAX_BODY_SIZE,
+                 binary_bodies: bool = CAPTURE_BINARY):
+        self.max_body = max_body
+        self.binary_bodies = binary_bodies
         self.path = path
         self.fp = path.open("w", encoding="utf-8", buffering=1)
         self.lock = threading.Lock()
@@ -255,6 +252,13 @@ class NetworkLogger:
         self.feed: deque[tuple[str, str, object, str]] = deque(maxlen=200)
 
     # ── лента и статистика ─────────────────────────────────────────────────
+
+    def _truncate(self, text: str) -> str:
+        # Inspect at most limit + 1 characters even for multi-megabyte responses.
+        prefix = text[:self.max_body + 1].encode("utf-8", errors="replace")
+        if len(prefix) > self.max_body:
+            return prefix[:self.max_body].decode("utf-8", errors="ignore") + "...[TRUNCATED]"
+        return text
 
     def _feed(self, tag: str, code: object, url: str | None) -> None:
         self.feed.append((datetime.now().strftime("%H:%M:%S"), tag, code, url or ""))
@@ -280,10 +284,14 @@ class NetworkLogger:
         req = flow.request
         body = None
         if req.content:
-            try:
-                body = _truncate(req.get_text(strict=False) or "")
-            except Exception:
-                body = _binary_body(req.content)
+            ct = req.headers.get("content-type", "").lower()
+            if not ct or any(kind in ct for kind in _TEXTUAL):
+                try:
+                    body = self._truncate(req.get_text(strict=True) or "")
+                except ValueError:
+                    body = _binary_body(req.content, ct, self.max_body, self.binary_bodies)
+            else:
+                body = _binary_body(req.content, ct, self.max_body, self.binary_bodies)
         with self.lock:
             self.hosts[req.pretty_host] += 1
             self.methods[req.method] += 1
@@ -311,12 +319,12 @@ class NetworkLogger:
                 try:
                     full = resp.get_text(strict=False) or ""
                 except Exception:
-                    body = _binary_body(resp.content, ct)
+                    body = _binary_body(resp.content, ct, self.max_body, self.binary_bodies)
                 if full is not None:
                     self._collect_js(url, ct, full, resp.headers)  # из ПОЛНОГО тела
-                    body = _truncate(full)
+                    body = self._truncate(full)
             else:
-                body = _binary_body(resp.content, ct)
+                body = _binary_body(resp.content, ct, self.max_body, self.binary_bodies)
 
         with self.lock:
             self.status_classes[f"{resp.status_code // 100}xx"] += 1
@@ -354,10 +362,10 @@ class NetworkLogger:
             return
         msg = flow.websocket.messages[-1]
         if msg.is_text:
-            content = _truncate(msg.content.decode("utf-8", errors="replace"))
+            content = self._truncate(msg.content.decode("utf-8", errors="replace"))
         else:
             # protobuf / msgpack и т.п.: decode(errors="replace") молча дал бы мусор
-            content = _binary_body(msg.content)
+            content = _binary_body(msg.content, "", self.max_body, self.binary_bodies)
         self._feed("WS", "→" if msg.from_client else "←", flow.request.pretty_url)
         self._log(
             "ws_msg", "ws",

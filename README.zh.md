@@ -7,7 +7,7 @@
 在网络层捕获流量并全部保存到磁盘 —— 无需扩展、不注入代码，页面按原样运行。
 
 [![CI](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml/badge.svg)](https://github.com/web3daemon/httpcrabber-client/actions/workflows/ci.yml)
-[![版本 v1.4.0](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
+[![版本 v1.5.0](assets/badge-version.svg)](https://pypi.org/project/httpcrabber/)
 [![Python 3.11+](assets/badge-python.svg)](https://www.python.org/)
 [![平台 Windows · macOS · Linux](assets/badge-platform.svg)](#环境要求)
 [![许可证 GPL-3.0](assets/badge-license.svg)](LICENSE)
@@ -30,7 +30,7 @@ pipx install httpcrabber          # 或：在 venv 中 pip install httpcrabber
 httpcrabber
 ```
 
-回答三个问题，照常浏览，关闭 Chrome —— 本次会话的所有请求、响应、WebSocket 帧和脚本都保存在 `LOGS/<会话名>/` 中。
+选择启动设置，照常浏览，关闭 Chrome —— 本次会话的所有请求、响应、WebSocket 帧和脚本都保存在 `LOGS/<会话名>/` 中。
 
 ## 为什么需要它
 
@@ -61,7 +61,7 @@ httpcrabber
 | 🔐 **自动配置 CA 证书** | 首次运行时自动检查并安装证书，支持 Windows、macOS 与 Linux |
 | ⌨️ **可脚本化** | 每个提问都有对应参数；全部传入则不再询问 |
 | ⏹ **安全退出** | 关闭 Chrome *或* 按 `Ctrl+C` 均可结束，两种情况下转储都会保存、子进程都会被清理 |
-| 🌍 **双语界面** | 俄语或英语，启动时选择或通过 `--lang` 指定 |
+| 🌍 **多语言界面** | 俄语、英语或波兰语，启动时选择或通过 `--lang` 指定 |
 
 ## 环境要求
 
@@ -104,11 +104,13 @@ pip install -e ".[dev]"
 httpcrabber
 ```
 
-工具只会询问三件事，其余全部自动完成：
+选择本次录制的设置：
 
-1. **语言** —— 俄语或英语
+1. **语言** —— 俄语、英语或波兰语
 2. **上游代理** —— 任意格式粘贴即可，或直接按 <kbd>Enter</kbd> 使用直连
 3. **会话名称** —— 例如 `TARGET RECON`
+4. **正文大小限制** —— 默认 200,000 字节，也可以输入 `20MB`。
+5. **Chrome 配置文件** —— 选择已有配置或新建一个。
 
 <p align="center">
   <img src="assets/screen-start.svg" alt="httpcrabber 启动界面：横幅、会话简报、状态行" width="100%">
@@ -135,7 +137,10 @@ httpcrabber -s api --include '*.target.com' --sourcemaps  # 只记录目标 + �
 
 | 参数 | 含义 |
 |---|---|
-| `-l, --lang {ru,en}` | 界面语言 |
+| `-l, --lang TAG` | Chrome 的语言和地区。录制界面支持俄语、波兰语和英语。 |
+| `--profile NAME`、`--profile-dir PATH` | 使用命名配置或现有 Chrome 配置目录 |
+| `--max-body 20MB`、`--binary-bodies` | 设置正文大小限制及二进制录制 |
+| `--theme ink` | 保存黑白主题，使用 `httpcrabber theme neon` 切换回 Neon。 |
 | `-s, --session NAME` | 会话名称 → `LOGS/<name>/` |
 | `-p, --proxy PROXY` | 上游代理，任意[格式](#代理格式) |
 | `--direct` | 不使用上游代理 |

@@ -87,6 +87,6 @@ src/httpcrabber/
 ## Adding a language
 
 1. Add the dictionary to `STRINGS` in `src/httpcrabber/i18n.py` — copy `en`, translate values.
-2. Add the choice in `cli._ask_lang()`.
+2. Add the language and searchable region names in `src/httpcrabber/regions.py`.
 3. Optionally add `README.<code>.md` and link it from the language switcher in every README.
 4. `pytest tests/test_i18n.py` must pass.

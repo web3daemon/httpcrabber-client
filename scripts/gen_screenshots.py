@@ -80,7 +80,8 @@ def demo_cfg(launch_browser: bool = True):
         proxy_port=8080,
         session_dir=PurePosixPath("LOGS/target_recon"),
         log_path=DemoPath(2_422_000),
-        launch_browser=launch_browser,
+        launch_browser=launch_browser, profile_dir=PurePosixPath("profiles/default"),
+        max_body=200_000, binary_bodies=False, locale="en-US",
     )
 
 

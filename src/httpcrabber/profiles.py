@@ -48,8 +48,8 @@ def profiles_main(argv: list[str]) -> int:
         if args.action in (None, "list"):
             chosen = preferred()
             for name in names():
-                console.print(("* " if root() / name == chosen else "  ") + name, markup=False)
-            console.print(f"→ {chosen}", markup=False)
+                console.print(("* " if root() / name == chosen else "  ") + name, markup=False, soft_wrap=True)
+            console.print(f"→ {chosen}", markup=False, soft_wrap=True)
             return 0
         path = root() / args.name
         if args.action == "create":
@@ -63,7 +63,7 @@ def profiles_main(argv: list[str]) -> int:
                 Path(f.name).replace(root() / ".active")
             finally:
                 Path(f.name).unlink(missing_ok=True)
-        console.print(str(path), markup=False)
+        console.print(str(path), markup=False, soft_wrap=True)
         return 0
     except (OSError, ValueError) as exc:
         parser.error(str(exc))

@@ -32,6 +32,10 @@ def save_theme(value: str) -> None:
         Path(temp.name).unlink(missing_ok=True)
 
 
+def interactive_terminal() -> bool:
+    return sys.stdin.isatty() and sys.stdout.isatty()
+
+
 def choose_theme() -> str | None:
     import questionary
 
@@ -56,7 +60,7 @@ def main(argv: list[str] | None = None) -> int:
         parser.add_argument("--theme", choices=THEMES)
         options, argv = parser.parse_known_args(argv)
         choice = options.theme
-    if choice is None and sys.stdin.isatty() and (theme_command or (not argv and not saved_theme())):
+    if choice is None and interactive_terminal() and (theme_command or (not argv and not saved_theme())):
         choice = choose_theme()
         if choice is None:
             return 1

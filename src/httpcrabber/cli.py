@@ -15,6 +15,7 @@ from httpcrabber.commands import COMMANDS
 from httpcrabber.commands import HELP as COMMANDS_HELP
 from httpcrabber.config import CYAN, DIM, ERR, MAG, MAX_BODY_SIZE, MONO, REPO_URL, console, settings
 from httpcrabber.i18n import LANGUAGES, t
+from httpcrabber.launcher import interactive_terminal
 from httpcrabber.proxy import Proxy, parse_proxy
 from httpcrabber.regions import REGIONS, locale_tag
 from httpcrabber.session import make_config, run_session
@@ -147,7 +148,7 @@ def _choose_profile() -> Path | None:
 
 def configure(args: argparse.Namespace):
     """Собирает SessionConfig из аргументов, спрашивая только недостающее."""
-    interactive = sys.stdin.isatty()
+    interactive = interactive_terminal()
 
     wizard = interactive and (args.setup or not args.session or not args.lang
                               or (not args.direct and args.proxy is None))
